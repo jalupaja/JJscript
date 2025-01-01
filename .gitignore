@@ -1,0 +1,8 @@
+/Project.pdf
+LNG
+LNG.tab.*
+LNG.lex.*
+LNG.output
+
+*.o
+*.gch
