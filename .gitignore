@@ -1,8 +1,11 @@
 /Project.pdf
-LNG
-LNG.tab.*
-LNG.lex.*
-LNG.output
+term
+term.tab.*
+term.lex.*
+term.output
+
+LNG*
+TST*
 
 *.o
 *.gch
