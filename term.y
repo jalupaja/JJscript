@@ -10,15 +10,15 @@ int yydebug=0;
 extern FILE *yyin;
 int yylex (void);
 void yyerror (const char *msg) {
-	printf("Parse error: %s\n", msg);
+    fprintf(stderr, "Parse error: %s\n", msg);
 }
 
-typedef enum { INT_TYPE, FLOAT_TYPE, STRING_TYPE } var_type;
+typedef enum { INT_TYPE, FLOAT_TYPE, STRING_TYPE, EMPTY_TYPE } var_type;
 
 union data_value {
     int intval;
     double floatval;
-    string strval;
+    string *strval;
 };
 
 typedef struct {
@@ -29,14 +29,14 @@ typedef struct {
 
 
 typedef struct {
-    string id;
+    string *id;
     value *val;
 } var;
 
 queue *vars;
 
-string input() {
-    string str = string_create("");
+string *input() {
+    string *str = string_create(NULL);
 
     int ch;
     while ((ch = getchar()) != '\n' && ch != EOF) {
@@ -55,12 +55,16 @@ int input_float() {
     return atof(string_get_chars(input()));
 }
 
-var* queue_search_id(queue *q, string id) {
+char *input_chars() {
+    return string_get_chars(input());
+}
+
+var* queue_search_id(queue *q, string *id) {
     var *cur;
     ssize_t q_len = queue_len(q);
     for (ssize_t i = 0; i < q_len; i++) {
         cur = (var *) queue_at(q, i);
-        if (string_cmp(id, cur->id) == 0)
+        if (cur != NULL && string_cmp(id, cur->id) == 0)
             return cur;
     }
     return NULL;
@@ -76,7 +80,9 @@ value *create_value(void *new_val, var_type val_type) {
             val->val.floatval = *(float *)new_val;
             break;
         case STRING_TYPE:
-            val->val.strval = *(string *)new_val;
+            val->val.strval = (string *)new_val;
+            break;
+        default:
             break;
     }
     val->val_type = val_type;
@@ -87,27 +93,24 @@ value *create_value(void *new_val, var_type val_type) {
 void free_value(value *val) {
     if (val->val_type == STRING_TYPE) {
         // free string as it will be overwritten
-        string_free(&val->val.strval);
+        string_free(val->val.strval);
     }
     free(val);
 }
 
-void queue_save_val(queue *q, string id, value *val) {
-    printf("saving to queue: %s | %d : ", string_get_chars(id), val->val.intval);
+void queue_save_val(queue *q, string *id, value *val) {
     var *cur = queue_search_id(q, id);
     if (cur != NULL) {
-        printf("exists\n");
         // id already exists -> update value
         free_value(cur->val);
         cur->val = val;
 
     } else {
-        printf("new\n");
         // enqueue new value
         var *new = (var *) malloc(sizeof(var));
         new->id = id;
         new->val = val;
-        queue_enqueue(q, &new);
+        queue_enqueue(q, new);
     }
 }
 
@@ -118,7 +121,7 @@ int exec = 0;
 
 struct ast {
 	int type;
-	string id;
+	string *id;
     value *val;
 	struct ast *c[MC];
 };
@@ -128,7 +131,6 @@ typedef struct ast ast_t;
 ast_t *node0(int type) {
 	ast_t *ret = calloc(sizeof *ret, 1);
 	ret->type = type;
-    // TODO malloc val
 
 	return ret;
 }
@@ -176,8 +178,8 @@ void opt_ast ( ast_t *t);
 
 %union {
 	int num;
-	string id;
-	string str;
+	string *id;
+	string *str;
 	int op;
 	ast_t *ast;
 }
@@ -315,6 +317,5 @@ void opt_ast ( ast_t *t) {
 int main (int argc, char **argv) {
     vars = queue_create();
 	yyin = fopen(argv[1], "r");
-    printf("created queue\n");
 	yyparse();
 }

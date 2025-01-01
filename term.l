@@ -28,7 +28,7 @@ WHILE "while"
 {INPUT} { return _input; }
 {NUM}   { yylval.num = atoi(yytext); return num;   }
 {ID}    { yylval.id = string_create(yytext); return id;   }
-{STR}   { /* removed "/' */ yylval.str = string_create(yytext+1); string_remove_chars_from_end(yylval.str, 1); return str; }
+{STR}   { /* removed "' */ yylval.str = string_create(yytext+1); string_remove_chars_from_end(yylval.str, 1); return str; }
 
 [ \n\t]
 
