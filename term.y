@@ -201,7 +201,7 @@ STMTS: STMTS STMT ';' { $$ = node2(STMTS, $1, $2); }
  | %empty { $$ = NULL; }
 
 STMT: TERM
-    | print str { $$ = node0(print); $$->val = create_value(&$2, STRING_TYPE);  }
+        | print str { $$ = node0(print); $$->val = create_value(&$2, STRING_TYPE);  }
 		| print TERM { $$ = node1(print, $2); }
 		| _if TERM '{' STMTS '}' _else '{' STMTS '}'
 		  { $$ = node3(_if, $2, $4, $8); }
@@ -214,10 +214,10 @@ TERM:
     | TERM '/' TERM { $$ = node2('/', $1, $3); }
     | TERM '<' TERM { $$ = node2('<', $1, $3); }
     | TERM '^' TERM { $$ = node2('^', $1, $3); }
-		| '(' TERM ')'  { $$ = $2; }
-		| NUMORID
+    | '(' TERM ')'  { $$ = $2; }
+    | NUMORID
     | id '=' TERM { $$ = node1('=', $3); $$->id = $1; }
-		| _input { $$ = node0(_input); }
+    | _input { $$ = node0(_input); }
 
 NUMORID: NUM
        | ID
@@ -252,7 +252,6 @@ int ex (ast_t *t) {
             int res = ex(t->c[0]);
             value *val = create_value(&res, INT_TYPE);
 
-            printf("id: %s\nvar: %d\n", string_get_chars(t->id), res);
             queue_save_val(vars, t->id, val);
 
             return val->val.intval;
