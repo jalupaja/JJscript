@@ -203,7 +203,7 @@ STMTS: STMTS STMT ';' { $$ = node2(STMTS, $1, $2); }
  | %empty { $$ = NULL; }
 
 STMT: TERM
-        | print str { $$ = node0(print); $$->val = create_value(&$2, STRING_TYPE);  }
+        | print str { $$ = node0(print); $$->val = create_value($2, STRING_TYPE); }
 		| print TERM { $$ = node1(print, $2); }
 		| _if TERM '{' STMTS '}' _else '{' STMTS '}'
 		  { $$ = node3(_if, $2, $4, $8); }
