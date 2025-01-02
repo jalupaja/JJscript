@@ -1,11 +1,19 @@
 %{
+/* TODO
+*/
+
+// TODO in extra file
+enum _var_type { INT_TYPE, FLOAT_TYPE, BOOL_TYPE, NULL_TYPE, STRING_TYPE };
+typedef enum _var_type var_type;
+typedef struct _value value;
+typedef struct _ast_t ast_t;
+value *create_value(void *new_val, var_type val_type);
 
 #include "string.h"
 #include "queue.h"
-#include <stdbool.h>
-
-typedef struct ast ast_t;
 #include "term.tab.h"
+
+#include <stdbool.h>
 
 %}
 NUM -?[0-9]+
