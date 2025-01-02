@@ -26,6 +26,7 @@ MINUS "-"
 STR \"[^\"]*\"
 PRINT "print"
 INPUT "input"
+ELIF "elif"
 IF "if"
 ELSE "else"
 WHILE "while"
@@ -37,6 +38,7 @@ EQ "=="
 %%
 
 {IF}      { return _if; }
+{ELIF}    { return _elif; }
 {ELSE}    { return _else; }
 {WHILE}   { return _while; }
 {PRINT}   { return print; }

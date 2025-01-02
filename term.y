@@ -222,9 +222,9 @@ void opt_ast ( ast_t *t);
 
 %define parse.error detailed
 
-%token _if _else _while _input _le _ge _eq print <val> val <id> id <op> op
+%token _if _elif _else _while _input _le _ge _eq print <val> val <id> id <op> op
 
-%type <ast> VAL ID STMTS STMT EXPR
+%type <ast> VAL ID STMTS STMT EXPR CONDITIONAL IFELSE
 
 %right '='
 %left '<' '>' _le _ge _eq
@@ -236,14 +236,19 @@ void opt_ast ( ast_t *t);
 S: STMTS { opt_ast($1); printf("\n"); print_ast($1); printf("\n"); ex($1); }
 
 STMTS: STMTS STMT ';' { $$ = node2(STMTS, $1, $2); }
- | %empty { $$ = NULL; }
+     | STMTS CONDITIONAL { $$ = node2(STMTS, $1, $2); }
+     | %empty { $$ = NULL; }
 
 STMT: VAL
     | print EXPR { $$ = node1(print, $2); }
-	| _if EXPR '{' STMTS '}' _else '{' STMTS '}'
-	  { $$ = node3(_if, $2, $4, $8); }
-	| _while EXPR '{' STMTS '}' { $$ = node2(_while, $2, $4); }
     | id '=' EXPR { $$ = node1('=', $3); $$->id = $1; }
+
+CONDITIONAL: _if EXPR '{' STMTS '}' IFELSE { $$ = node3(_if, $2, $4, $6); }
+           | _while EXPR '{' STMTS '}' { $$ = node2(_while, $2, $4); }
+
+IFELSE: _elif EXPR '{' STMTS '}' IFELSE { $$ = node3(_if, $2, $4, $6); }
+      | _else '{' STMTS '}' { $$ = node1(_else, $3); }
+      | %empty { $$ = NULL; }
 
 EXPR:
       EXPR '-' EXPR { $$ = node2('-', $1, $3); }
@@ -601,7 +606,14 @@ value *ex(ast_t *t) {
             return create_value(NULL, NULL_TYPE);
         }
         case _if:
-            return val_true(ex(t->c[0])) ? ex(t->c[1]) : ex(t->c[2]);
+            if (val_true(ex(t->c[0]))) {
+                return ex(t->c[1]);
+            } else if (t->c[2]) {
+                return ex(t->c[2]);
+            }
+            return create_value(NULL, NULL_TYPE);
+        case _else:
+            return ex(t->c[0]);
         case _while:
             while (val_true(ex(t->c[0]))) {
                 ex(t->c[1]);
@@ -626,12 +638,18 @@ void opt_ast ( ast_t *t) {
 	switch (t->type) {
         case _if:
             // dead code elimination
-            opt_ast(t->c[0]), opt_ast(t->c[1]), opt_ast(t->c[2]);
+            opt_ast(t->c[0]), opt_ast(t->c[1]);
+            if (t->c[2]) opt_ast(t->c[2]);
+
             if (t->c[0]->type == val && !val_true(t->c[0]->val)) {
                 printf("Eliminating true case\n");
                 free_ast(t->c[1]);
                 free_ast_outer(t);
-                memcpy(t, t->c[2], sizeof *t);
+                if (t->c[2]) {
+                    memcpy(t, t->c[2], sizeof *t);
+                } else {
+                    t->type = NULL_TYPE; // TODO free?
+                }
             } else if (t->c[0]->type == val && val_true(t->c[0]->val)) {
                 printf("Eliminating false case\n");
                 free_ast(t->c[2]);
