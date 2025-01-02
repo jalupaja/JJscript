@@ -8,8 +8,8 @@ typedef struct ast ast_t;
 #include "term.tab.h"
 
 %}
-NUM [0-9]+
-FP  ({NUM}?\.{NUM}f?|{NUM}f)
+NUM -?[0-9]+
+FP  -?({NUM}?\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
 ID  [a-z]+
