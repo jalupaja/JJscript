@@ -206,11 +206,6 @@ ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3) {
 	return ret;
 }
 
-// TODO WTF
-enum {
-	STMTS = 10000
-};
-
 void print_ast (ast_t *t) {
 	if (!t) return;
 	printf(" ( %d ", t->type);
@@ -222,6 +217,11 @@ void print_ast (ast_t *t) {
 
 value *ex (ast_t *t);
 void opt_ast ( ast_t *t);
+
+enum {
+	STMTS = 10000
+};
+
 %}
 
 %union {
@@ -295,14 +295,14 @@ value *addition(value *a, value *b) {
                     return create_value(res, STRING_TYPE);
                 }
                 case INT_TYPE: {
-                    char buffer[32]; // TODO could be improved
-                    snprintf(buffer, sizeof(buffer), "%o", b->val.intval); // OCTAL
+                    char buffer[32];
+                    snprintf(buffer, sizeof(buffer), "%d", b->val.intval);
                     string *res = string_copy(a->val.strval);
                     string_append_chars(res, buffer);
                     return create_value(res, STRING_TYPE);
                 }
                 case FLOAT_TYPE: {
-                    char buffer[64]; // TODO could be improved
+                    char buffer[64];
                     snprintf(buffer, sizeof(buffer), "%f", b->val.floatval);
                     string *res = string_copy(a->val.strval);
                     string_append_chars(res, buffer);
