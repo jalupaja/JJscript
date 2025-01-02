@@ -38,6 +38,8 @@ string *string_create(const char *init) {
   return str;
 }
 
+string *string_copy(string *str) { return string_create(str->data); }
+
 ssize_t string_len(string *str) { return str->length; }
 
 void string_append_char(string *str, const char suffix) {
@@ -86,6 +88,25 @@ void string_append_string(string *str1, string *str2) {
   str1->length += str2->length;
 }
 
+void string_prefix_chars(const char *prefix, string *str) {
+  // TODO untested
+  size_t prefix_len = strlen(prefix);
+  char *old_ptr = NULL;
+
+  if (str->length + prefix_len >= str->capacity) {
+    while (str->length + prefix_len >= str->capacity) {
+      str->capacity *= 2;
+    }
+    old_ptr = str->data;
+    str->data = (char *)malloc(str->capacity);
+  }
+
+  strcpy(str->data, prefix);
+  strcat(str->data, old_ptr);
+  free(old_ptr);
+  str->length += prefix_len;
+}
+
 string *string_substring(string *str, size_t start, size_t end) {
   if (start > end || end > str->length) {
     fprintf(stderr, "Invalid substring range.\n");
@@ -112,6 +133,10 @@ char *string_get_chars(string *str) { return str->data; }
 
 int string_cmp(string *str1, string *str2) {
   return strcmp(str1->data, str2->data);
+}
+
+int string_cmp_chars(string *str1, const char *str2) {
+  return strcmp(str1->data, str2);
 }
 
 void string_free(string *str) {
