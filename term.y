@@ -5,19 +5,23 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 int yydebug=0;
 extern FILE *yyin;
 int yylex (void);
 void yyerror (const char *msg) {
     fprintf(stderr, "Parse error: %s\n", msg);
+    exit(EXIT_FAILURE);
 }
 
-typedef enum { INT_TYPE, FLOAT_TYPE, STRING_TYPE, EMPTY_TYPE } var_type;
+typedef enum { INT_TYPE, FLOAT_TYPE, BOOL_TYPE, NULL_TYPE, STRING_TYPE, EMPTY_TYPE } var_type;
 
 union data_value {
     int intval;
     double floatval;
+    bool boolval;
     string *strval;
 };
 
