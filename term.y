@@ -83,6 +83,11 @@ value *create_value(void *new_val, var_type val_type) {
         case FLOAT_TYPE:
             val->val.floatval = *(float *)new_val;
             break;
+        case BOOL_TYPE:
+            val->val.boolval  = *(bool *)new_val;
+            break;
+        case NULL_TYPE:
+            break;
         case STRING_TYPE:
             val->val.strval = (string *)new_val;
             break;
@@ -181,18 +186,20 @@ void opt_ast ( ast_t *t);
 %}
 
 %union {
-	int num;
-	string *id;
-	string *str;
-	int op;
-	ast_t *ast;
+    string *id;
+    int num;
+    float fp;
+    bool boolean;
+    string *str;
+    int op;
+    ast_t *ast;
 }
 
 %define parse.error detailed
 
-%token _if _else _while _input print <num> num <id> id <op> op <str> str
+%token _if _else _while _input print <num> num <fp> fp <boolean> boolean nil <id> id <op> op <str> str
 
-%type <ast> TERM NUMORID NUM ID STMTS STMT
+%type <ast> TERM NUMORID NUM FP BOOLEAN NIL ID STMTS STMT STR
 
 %right '='
 %left '<'
@@ -228,8 +235,12 @@ TERM:
 NUMORID: NUM
        | ID
 
-NUM: num { $$ = node0(num); $$->val = create_value(&$1, INT_TYPE); }
-ID:  id  { $$ = node0(id); $$->id = $1; }
+NUM:     num     { $$ = node0(num); $$->val = create_value(&$1, INT_TYPE); }
+FP:      fp      { $$ = node0(fp); $$->val = create_value(&$1, FLOAT_TYPE); }
+BOOLEAN: boolean { $$ = node0(boolean); $$->val = create_value(&$1, BOOL_TYPE); }
+NIL:     nil     { $$ = node0(nil); $$->val = create_value(NULL, NULL_TYPE)}
+ID:      id      { $$ = node0(id); $$->id = $1; }
+STR:     str     { $$ = node0(str); $$->val = create_value(&$1, STRING_TYPE); }
 
 %%
 
