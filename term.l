@@ -16,7 +16,7 @@ value *create_value(void *new_val, var_type val_type);
 #include <stdbool.h>
 
 %}
-NUM -?[0-9]+
+NUM -?[0-7]+
 FP  -?({NUM}?\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"

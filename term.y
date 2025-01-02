@@ -81,8 +81,8 @@ string *input() {
 }
 
 int input_int() {
-    // TODO change to octal, also change in linker (print already is)
-    return atoi(string_get_chars(input()));
+    int ret = (int)strtol(string_get_chars(str), NULL, 8); // OCTAL
+    return ret;
 }
 
 double input_float() {
@@ -305,7 +305,7 @@ value *addition(value *a, value *b) {
             switch (b->val_type) {
                 case STRING_TYPE: {
                     char buffer[32];
-                    snprintf(buffer, sizeof(buffer), "%o", a->val.intval); // OCTAL
+                    snprintf(buffer, sizeof(buffer), "%d", a->val.intval);
                     string *res = string_create(buffer);
                     string_append_string(res, b->val.strval);
                     return create_value(res, STRING_TYPE);
@@ -511,7 +511,7 @@ void print_value(value *val) {
     }
     switch (val->val_type) {
         case INT_TYPE:
-            printf("> %d\n", val->val.intval);
+            printf("> %o\n", val->val.intval); // OCTAL
             break;
         case FLOAT_TYPE:
             printf("> %f\n", val->val.floatval);
