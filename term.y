@@ -43,7 +43,6 @@ union data_value {
 struct _value {
     union data_value val;
     var_type val_type;
-    // TODO check all var_types...
 };
 typedef struct _value value;
 
@@ -52,6 +51,21 @@ struct _var {
     value *val;
 };
 typedef struct _var var;
+
+// TODO what
+int exec = 0;
+#define EXEC if (exec == 0)
+
+#define MC 3
+
+struct _ast_t {
+	int type;
+	string *id;
+    value *val;
+	struct _ast_t *c[MC];
+};
+typedef struct _ast_t ast_t;
+
 
 queue *vars;
 
@@ -67,7 +81,7 @@ string *input() {
 }
 
 int input_int() {
-    // TODO octal
+    // TODO change to octal, also change in linker (print already is)
     return atoi(string_get_chars(input()));
 }
 
@@ -123,6 +137,20 @@ void free_value(value *val) {
     free(val);
 }
 
+void free_ast_outer(ast_t *t) {
+    string_free(t->id);
+    free_value(t->val);
+}
+
+void free_ast(ast_t *t) {
+	if (!t) return;
+    string_free(t->id);
+    free_value(t->val);
+	for (int i = 0; i < MC; i++) {
+		free_ast(t->c[i]);
+	}
+}
+
 void queue_save_val(queue *q, string *id, value *val) {
     var *cur = queue_search_id(q, id);
     if (cur != NULL) {
@@ -138,19 +166,6 @@ void queue_save_val(queue *q, string *id, value *val) {
         queue_enqueue(q, new);
     }
 }
-
-int exec = 0;
-#define EXEC if (exec == 0)
-
-#define MC 3
-
-struct _ast_t {
-	int type;
-	string *id;
-    value *val;
-	struct _ast_t *c[MC];
-};
-typedef struct _ast_t ast_t;
 
 ast_t *node0(int type) {
 	ast_t *ret = calloc(sizeof *ret, 1);
@@ -196,8 +211,6 @@ void print_ast (ast_t *t) {
 
 value *ex (ast_t *t);
 void opt_ast ( ast_t *t);
-
-// TODO maybe not num but value?
 %}
 
 %union {
@@ -544,7 +557,6 @@ value *ex(ast_t *t) {
 
     switch (t->type) {
         case STMTS:
-            // TODO check
             ex(t->c[0]);
             return ex(t->c[1]);
         case '+':
@@ -615,12 +627,15 @@ void opt_ast ( ast_t *t) {
         case _if:
             // dead code elimination
             opt_ast(t->c[0]), opt_ast(t->c[1]), opt_ast(t->c[2]);
-            // TODO type
             if (t->c[0]->type == val && !val_true(t->c[0]->val)) {
                 printf("Eliminating true case\n");
+                free_ast(t->c[1]);
+                free_ast_outer(t);
                 memcpy(t, t->c[2], sizeof *t);
             } else if (t->c[0]->type == val && val_true(t->c[0]->val)) {
                 printf("Eliminating false case\n");
+                free_ast(t->c[2]);
+                free_ast_outer(t);
                 memcpy(t, t->c[1], sizeof *t);
             }
             break;
