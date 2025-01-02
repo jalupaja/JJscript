@@ -66,7 +66,6 @@ struct _ast_t {
 };
 typedef struct _ast_t ast_t;
 
-
 queue *vars;
 
 string *input() {
@@ -81,16 +80,28 @@ string *input() {
 }
 
 int input_int() {
+    string *str = input();
     int ret = (int)strtol(string_get_chars(str), NULL, 8); // OCTAL
+    // int ret = atoi(string_get_chars(str));
+    string_free(str);
     return ret;
 }
 
 double input_float() {
-    return atof(string_get_chars(input()));
+    string *str = input();
+    double ret = atof(string_get_chars(str));
+    string_free(str);
+    return ret;
 }
 
 char *input_chars() {
-    return string_get_chars(input());
+    string *str = input();
+
+    char *ret = malloc(str->length + 1);
+    strcpy(ret, string_get_chars(str));
+
+    string_free(str);
+    return ret;
 }
 
 var* queue_search_id(queue *q, string *id) {
