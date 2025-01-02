@@ -46,7 +46,7 @@ EQ "=="
 {LE}      { return _le; }
 {GE}      { return _ge; }
 {EQ}      { return _eq; }
-{NUM}     { int v = atoi(yytext); yylval.val = create_value(&v, INT_TYPE); return val; }
+{NUM}     { int v = (int)strtol(yytext, NULL, 8); yylval.val = create_value(&v, INT_TYPE); return val; /* OCTAL */ }
 {FP}      { float v = atof(yytext); yylval.val = create_value(&v, FLOAT_TYPE); return val; }
 {BOOLEAN} { bool v = strcmp(yytext, "true") == 0; yylval.val = create_value(&v, BOOL_TYPE); return val; }
 {NIL}     { yylval.val = create_value(NULL, NULL_TYPE); return val; }
