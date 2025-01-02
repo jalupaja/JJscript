@@ -295,6 +295,31 @@ int ex (ast_t *t) {
 	return 0;
 }
 
+int val2bool(value *val) {
+    switch(val->val_type) {
+        case INT_TYPE:
+            return val->val.intval != 0;
+            break;
+        case FLOAT_TYPE:
+            return val->val.floatval != 0.0;
+            break;
+        case BOOL_TYPE:
+            return val->val.boolval;
+            break;
+        case NULL_TYPE:
+            return false;
+            break;
+        case STRING_TYPE:
+            string *str = val->val.strval;
+            return str == NULL || string_char_at(str, 0) == '\0';
+            break;
+        default:
+            printf("Unsupported value type(val2bool)");
+            break;
+    }
+    return false;
+}
+
 void opt_ast ( ast_t *t) {
 	if (!t) return;
 
@@ -302,6 +327,20 @@ void opt_ast ( ast_t *t) {
 		opt_ast(t->c[i]);
 
 	switch (t->type) {
+        case _if:
+            // dead code elimination
+            opt_ast(t->c[0]), opt_ast(t->c[1]), opt_ast(t->c[2]);
+            // TODO type
+            if (t->c[0]->type == num && !val2bool(t->c[0]->val)) {
+                printf("Eliminating true case\n");
+                memcpy(t, t->c[2], sizeof *t);
+            } else if (t->c[0]->type == num && val2bool(t->c[0]->val)) {
+                printf("Eliminating false case\n");
+                memcpy(t, t->c[1], sizeof *t);
+            }
+            break;
+        // TODO if else, else
+        // TODO dead code after return?
         // TODO implement more, per file typecheck val_type. is type necessary/ is val_type...
         // TODO global add/... functions for "all" datatypes?
 		case '+':
