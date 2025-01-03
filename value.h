@@ -1,9 +1,13 @@
-#ifndef VALUES_H
-#define VALUES_H
+#ifndef VALUE_H
+#define VALUE_H
 
 #include "string.h"
 #include <stdbool.h>
 #include <stdlib.h>
+
+typedef struct val_t val_t;
+typedef struct var_t var_t;
+typedef struct fun_t fun_t;
 
 typedef enum {
   INT_TYPE,
@@ -21,16 +25,16 @@ union data_value {
   string *strval;
 };
 
-typedef struct {
+struct val_t {
   union data_value val;
   var_type_t val_type;
-} val_t;
+};
 
-typedef struct {
+struct var_t {
   string *id;
   val_t *val;
-} var_t;
+};
 
 void free_value(val_t *val);
 
-#endif // VALUES_H
+#endif // VALUE_H

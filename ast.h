@@ -2,16 +2,18 @@
 #define AST_H
 
 #include "string.h"
-#include "value.h"
 
 #define MC 3
 
-typedef struct _ast_t {
+typedef struct ast_t ast_t;
+typedef struct val_t val_t;
+
+struct ast_t {
   int type;
   string *id;
   val_t *val;
-  struct _ast_t *c[MC];
-} ast_t;
+  struct ast_t *c[MC];
+};
 
 void ast_free_outer(ast_t *t);
 

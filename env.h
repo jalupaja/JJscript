@@ -3,13 +3,16 @@
 
 #include "queue.h"
 #include "string.h"
-#include "value.h"
 #include <stdlib.h>
 
-typedef struct _env_t {
+typedef struct env_t env_t;
+typedef struct val_t val_t;
+typedef struct var_t var_t;
+
+struct env_t {
   queue *vars;
-  struct _env_t *parent;
-} env_t;
+  struct env_t *parent;
+};
 
 void env_push();
 void pop_env();
