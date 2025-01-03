@@ -1,11 +1,7 @@
 /Project.pdf
-term
-term.tab.*
-term.lex.*
-term.output
-
-LNG*
-TST*
+prog
+parser.tab.*
+parser.output
+lexer.lex.*
 
 *.o
-*.gch

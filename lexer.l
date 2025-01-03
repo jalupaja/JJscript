@@ -7,7 +7,7 @@ typedef struct _ast_t ast_t;
 #include "string.h"
 #include "queue.h"
 #include "values.h"
-#include "term.tab.h"
+#include "parser.tab.h"
 
 #include <stdbool.h>
 
@@ -27,9 +27,10 @@ string *cur_str;
 %x MULTI_STRING_SINGLE
 %x COMMENT
 
-LINE_COMMENT \/\/.*
 REVERSE_LINE_COMMENT ^.*\?\?\?
-
+LINE_COMMENT \/\/.*
+BLOCK_COMMENT_IN "/\*"
+BLOCK_COMMENT_OUT "\*/"
 NUM -?[0-7]+
 FP  -?({NUM}?\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
@@ -64,6 +65,12 @@ EOL ";"
 
 %option noyywrap noinput nounput stack noyy_top_state
 %%
+
+{REVERSE_LINE_COMMENT} { /* REVERSE LINE COMMENT */ }
+{LINE_COMMENT} { /* LINE COMMENT */ }
+{BLOCK_COMMENT_IN} {/* BLOCK COMMENT */ yy_push_state(YYSTATE); BEGIN(COMMENT); }
+<COMMENT>. { }
+<COMMENT>{BLOCK_COMMENT_OUT} { yy_pop_state(); }
 
 {MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); cur_str = string_create(NULL); }
 <MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
