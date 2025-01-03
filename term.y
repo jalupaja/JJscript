@@ -208,17 +208,20 @@ enum {
 %union {
     string *id;
     value *val;
-    int op;
     ast_t *ast;
 }
 
 %define parse.error detailed
 
-%token _if _elif _else _while _input _le _ge _eq print <val> val <id> id <op> op
+%token _if _elif _else _while
+%token _input _inline_expr print <val> val <id> id
+%token assign eol
+%token _le _ge _eq
+%token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <ast> VAL ID STMTS STMT EXPR CONDITIONAL IFELSE
 
-%right '='
+%right assign
 %left '<' '>' _le _ge _eq
 %left '-' '+'
 %left '*' '/'
@@ -227,19 +230,18 @@ enum {
 
 S: STMTS { opt_ast($1); printf("\n"); print_ast($1); printf("\n"); ex($1); }
 
-STMTS: STMTS STMT ';' { $$ = node2(STMTS, $1, $2); }
+STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS CONDITIONAL { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
-STMT: VAL
-    | print EXPR { $$ = node1(print, $2); }
-    | id '=' EXPR { $$ = node1('=', $3); $$->id = $1; }
+STMT: print EXPR { $$ = node1(print, $2); }
+    | id assign EXPR { $$ = node1('=', $3); $$->id = $1; }
 
-CONDITIONAL: _if EXPR '{' STMTS '}' IFELSE { $$ = node3(_if, $2, $4, $6); }
-           | _while EXPR '{' STMTS '}' { $$ = node2(_while, $2, $4); }
+CONDITIONAL: _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
+           | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
-IFELSE: _elif EXPR '{' STMTS '}' IFELSE { $$ = node3(_if, $2, $4, $6); }
-      | _else '{' STMTS '}' { $$ = node1(_else, $3); }
+IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
+      | _else lcurly STMTS rcurly { $$ = node1(_else, $3); }
       | %empty { $$ = NULL; }
 
 EXPR:
@@ -253,7 +255,7 @@ EXPR:
     | EXPR '<' EXPR { $$ = node2('<', $1, $3); }
     | EXPR '>' EXPR { $$ = node2('>', $1, $3); }
     | EXPR '^' EXPR { $$ = node2('^', $1, $3); }
-    | '(' EXPR ')'  { $$ = $2; }
+    | lbrak EXPR rbrak  { $$ = $2; }
     | VAL
     | ID
     | _input { $$ = node0(_input); }
