@@ -2,6 +2,7 @@
 #include "string.h"
 #include "queue.h"
 #include "values.h"
+#include "env.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -49,8 +50,6 @@ struct _ast_t {
 };
 typedef struct _ast_t ast_t;
 
-queue *vars;
-
 string *input() {
     string *str = string_create(NULL);
 
@@ -85,17 +84,6 @@ char *input_chars() {
 
     string_free(str);
     return ret;
-}
-
-var* queue_search_id(queue *q, string *id) {
-    var *cur;
-    ssize_t q_len = queue_len(q);
-    for (ssize_t i = 0; i < q_len; i++) {
-        cur = (var *) queue_at(q, i);
-        if (cur != NULL && string_cmp(id, cur->id) == 0)
-            return cur;
-    }
-    return NULL;
 }
 
 value *create_value(void *new_val, var_type val_type) {
@@ -135,25 +123,6 @@ void free_ast(ast_t *t) {
 	for (int i = 0; i < MC; i++) {
 		free_ast(t->c[i]);
 	}
-}
-
-void queue_save_val(queue *q, string *id, value *val) {
-    var *cur = queue_search_id(q, id);
-    if (DEBUG) printf("assign: %s = %d", string_get_chars(id), val->val.intval);
-    if (cur != NULL) {
-        // id already exists -> update value
-        if (DEBUG) printf("(old)\n");
-        free_value(cur->val);
-        cur->val = val;
-
-    } else {
-        // enqueue new value
-        if (DEBUG) printf("(new)\n");
-        var *new = (var *) malloc(sizeof(var));
-        new->id = id;
-        new->val = val;
-        queue_enqueue(q, new);
-    }
 }
 
 ast_t *node0(int type) {
@@ -234,7 +203,8 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | id assign EXPR { $$ = node1(assign, $3); $$->id = $1; }
 
-CONDITIONAL: _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
+CONDITIONAL: lcurly STMTS rcurly { $$ = node1(lcurly, $2); }
+           | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
            | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
 IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
@@ -581,14 +551,20 @@ value *ex(ast_t *t) {
             return power(ex(t->c[0]), ex(t->c[1]));
         case assign: {
             value *res = ex(t->c[0]);
-            queue_save_val(vars, t->id, res);
+            env_save(t->id, res);
             return res;
         }
         case val:
             return t->val;
         case id: {
-            var *cur = queue_search_id(vars, t->id);
+            var *cur = env_search(t->id);
             return cur ? cur->val : create_value(NULL, NULL_TYPE);
+        }
+        case lcurly: {
+            env_push();
+            ex(t->c[0]);
+            env_pop();
+            return NULL;
         }
         case _input: {
             // TODO default is string? or try to make double > int > bool > str
@@ -676,7 +652,7 @@ void opt_ast ( ast_t *t) {
 
 
 int main (int argc, char **argv) {
-    vars = queue_create();
+    env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
 	yyparse();
 }

@@ -3,7 +3,7 @@ CFLAGS=-O0 -Wall -ggdb
 LDFLAGS=-lm
 PRJ=term
 
-$(PRJ): $(PRJ).tab.o $(PRJ).lex.o string.o queue.o values.o
+$(PRJ): $(PRJ).tab.o $(PRJ).lex.o string.o queue.o values.o env.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(PRJ).tab.c $(PRJ).tab.h: $(PRJ).y string.o queue.o
@@ -21,6 +21,8 @@ queue.o: queue.c queue.h
 string.o: string.c string.h
 
 values.o: values.c values.h
+
+env.o: env.c env.h
 
 clean:
 	rm -f $(PRJ).tab.* $(PRJ).lex.* $(PRJ) $(PRJ).output *.o *.gch
