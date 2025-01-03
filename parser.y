@@ -164,6 +164,7 @@ void print_ast (ast_t *t) {
 
 value *ex (ast_t *t);
 void opt_ast ( ast_t *t);
+void env_pop();
 
 enum {
 	STMTS = 10000
