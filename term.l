@@ -11,15 +11,38 @@ typedef struct _ast_t ast_t;
 
 #include <stdbool.h>
 
+value *create_value(void *new_val, var_type val_type);
+
+string *cur_str;
+
+/* TODO like f-strings
+<MULTI_STRING_DOUBLE>"\\${" { string_append_chars(cur_str, "${"); }
+<MULTI_STRING_DOUBLE>"${" { yy_push_state(YYSTATE); BEGIN(EXPRESSION); }
+*/
 %}
+
+%x STRING_DOUBLE
+%x MULTI_STRING_DOUBLE
+%x STRING_SINGLE
+%x MULTI_STRING_SINGLE
+%x COMMENT
+
+LINE_COMMENT \/\/.*
+REVERSE_LINE_COMMENT ^.*\?\?\?
+
 NUM -?[0-7]+
 FP  -?({NUM}?\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
 ID  [a-z]+
+HEX_NUM ([1-9a-fA-F][0-9a-fA-F]*|0)
+HEX 0x{HEX_NUM}
 PLUS "+"
 MINUS "-"
-STR \"[^\"]*\"
+STR_DOUBLE "\""
+MULTI_STR_DOUBLE "\"\"\""
+STR_SINGLE "'"
+MULTI_STR_SINGLE "'''"
 PRINT "print"
 INPUT "input"
 ELIF "elif"
@@ -30,8 +53,37 @@ LE "<="
 GE ">="
 EQ "=="
 
-%option noyywrap noinput nounput
+%option noyywrap noinput nounput stack noyy_top_state
 %%
+
+{MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); cur_str = string_create(NULL); }
+<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<MULTI_STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
+<MULTI_STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '\"'); /* append " on \" */ }
+<MULTI_STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<MULTI_STRING_DOUBLE>"\n" { string_append_char(cur_str, '\n'); }
+<MULTI_STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
+<MULTI_STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
+
+{STR_DOUBLE} { /* string with double quotes */ yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); cur_str = string_create(NULL); }
+<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
+<STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
+<STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
+<STRING_DOUBLE>"\n" { yyterminate(); /* TODO crash if string isn't finished??? */ }
+<STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
+
+{MULTI_STR_SINGLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_SINGLE); cur_str = string_create(NULL); }
+<MULTI_STRING_SINGLE>"'''" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<MULTI_STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); }
+<MULTI_STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
+
+{STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); cur_str = string_create(NULL); }
+<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<STRING_SINGLE>"''" { string_append_char(cur_str, '\''); /* append ' on '' */ }
+<STRING_SINGLE>"\n" { yyterminate(); /* TODO crash if string isn't finished... */ }
+<STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {IF}      { return _if; }
 {ELIF}    { return _elif; }
@@ -42,17 +94,15 @@ EQ "=="
 {LE}      { return _le; }
 {GE}      { return _ge; }
 {EQ}      { return _eq; }
-{NUM}     { int v = (int)strtol(yytext, NULL, 8); yylval.val = create_value(&v, INT_TYPE); return val; /* OCTAL */ }
+{NUM}     { printf("NUM: %s\n", yytext); int v = (int)strtol(yytext, NULL, 8); yylval.val = create_value(&v, INT_TYPE); return val; /* OCTAL */ }
 {FP}      { float v = atof(yytext); yylval.val = create_value(&v, FLOAT_TYPE); return val; }
 {BOOLEAN} { bool v = strcmp(yytext, "true") == 0; yylval.val = create_value(&v, BOOL_TYPE); return val; }
 {NIL}     { yylval.val = create_value(NULL, NULL_TYPE); return val; }
 {ID}      { yylval.id = string_create(yytext); return id;   }
-{STR}     { /* removed "' */ string *str = string_create(yytext+1);
-            string_remove_chars_from_end(str, 1);
-            yylval.val = create_value(str, STRING_TYPE);
-            return val;
-          }
 
 [ \n\t]
 
 .   { return yytext[0]; }
+
+%%
+

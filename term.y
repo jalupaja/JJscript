@@ -11,10 +11,11 @@
 
 /* TODO
 recursion (environments)
+for
 error msg on no file
-change names (STMTS, ....)
-implement floats
 implement strings (variables...)
+
+multi line strings, ... (old exercises)
 
 return?
 bools

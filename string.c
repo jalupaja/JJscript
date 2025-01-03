@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// TODO need to free on realloc?
 #define INITIAL_CAPACITY 16
 
 #define DEBUG 0
