@@ -11,7 +11,7 @@ typedef struct _ast_t ast_t;
 
 #include <stdbool.h>
 
-value *create_value(void *new_val, var_type val_type);
+val_t *create_value(void *new_val, var_type_t val_type);
 
 string *cur_str;
 

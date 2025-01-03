@@ -5,8 +5,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-enum _var_type { INT_TYPE, FLOAT_TYPE, BOOL_TYPE, NULL_TYPE, STRING_TYPE };
-typedef enum _var_type var_type;
+typedef enum {
+  INT_TYPE,
+  FLOAT_TYPE,
+  BOOL_TYPE,
+  NULL_TYPE,
+  STRING_TYPE,
+  FUNCTION_TYPE
+} var_type_t;
 
 union data_value {
   int intval;
@@ -17,14 +23,14 @@ union data_value {
 
 typedef struct {
   union data_value val;
-  var_type val_type;
-} value;
+  var_type_t val_type;
+} val_t;
 
 typedef struct {
   string *id;
-  value *val;
-} var;
+  val_t *val;
+} var_t;
 
-void free_value(value *val);
+void free_value(val_t *val);
 
 #endif // VALUES_H

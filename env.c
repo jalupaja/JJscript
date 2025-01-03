@@ -1,6 +1,6 @@
 #include "queue.h"
 #include "string.h"
-#include "values.h"
+#include "value.h"
 
 #include "env.h"
 
@@ -10,7 +10,7 @@
 
 env_t *cur_env = NULL;
 
-void queue_free(queue *q) {
+void queue_free(queue_t *q) {
   // TODO
 }
 
@@ -35,21 +35,21 @@ void env_pop() {
   }
 }
 
-var *queue_search_id(queue *q, string *id) {
-  var *cur;
+var_t *queue_search(queue_t *q, string *id) {
+  var_t *cur;
   ssize_t q_len = queue_len(q);
   for (ssize_t i = 0; i < q_len; i++) {
-    cur = (var *)queue_at(q, i);
+    cur = (var_t *)queue_at(q, i);
     if (cur != NULL && string_cmp(id, cur->id) == 0)
       return cur;
   }
   return NULL;
 }
 
-var *env_search(string *id) {
+var_t *env_search(string *id) {
   env_t *env = cur_env;
   while (env) {
-    var *result = queue_search_id(env->vars, id);
+    var_t *result = (var_t *)queue_search(env->vars, id);
     if (result != NULL)
       return result;
     env = env->parent;
@@ -57,13 +57,12 @@ var *env_search(string *id) {
   return NULL;
 }
 
-var *env_search_top(string *id) {
-  var *result = queue_search_id(cur_env->vars, id);
-  return result;
+var_t *env_search_top(string *id) {
+  return (var_t *)queue_search(cur_env->vars, id);
 }
 
-void env_save(string *id, value *val) {
-  var *cur = env_search_top(id);
+void env_save(string *id, val_t *val) {
+  var_t *cur = env_search_top(id);
   if (DEBUG)
     printf("assign: %s = %d", string_get_chars(id), val->val.intval);
   if (cur != NULL) {
@@ -77,22 +76,9 @@ void env_save(string *id, value *val) {
     // enqueue new value
     if (DEBUG)
       printf("(new)\n");
-    var *new = (var *)malloc(sizeof(var));
+    var_t *new = (var_t *)malloc(sizeof(var_t));
     new->id = id;
     new->val = val;
     queue_enqueue(cur_env->vars, new);
-  }
-}
-
-void save_var(string *id, value *val) {
-  var *existing_var = queue_search_id(cur_env->vars, id);
-  if (existing_var) {
-    free_value(existing_var->val);
-    existing_var->val = val;
-  } else {
-    var *new_var = (var *)malloc(sizeof(var));
-    new_var->id = id;
-    new_var->val = val;
-    queue_enqueue(cur_env->vars, new_var);
   }
 }

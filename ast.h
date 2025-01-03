@@ -1,7 +1,6 @@
 #ifndef AST_H
 #define AST_H
 
-#include "queue.h"
 #include "string.h"
 #include "value.h"
 
@@ -10,7 +9,7 @@
 typedef struct _ast_t {
   int type;
   string *id;
-  value *val;
+  val_t *val;
   struct _ast_t *c[MC];
 } ast_t;
 

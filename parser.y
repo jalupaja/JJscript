@@ -1,7 +1,7 @@
 %{
 #include "string.h"
 #include "queue.h"
-#include "values.h"
+#include "value.h"
 #include "env.h"
 #include "ast.h"
 
@@ -78,8 +78,8 @@ char *input_chars() {
     return ret;
 }
 
-value *create_value(void *new_val, var_type val_type) {
-    value *val = (value *)malloc(sizeof(value));
+val_t *create_value(void *new_val, var_type_t val_type) {
+    val_t *val = (val_t *)malloc(sizeof(val_t));
     switch(val_type) {
         case INT_TYPE:
             val->val.intval = *(int *)new_val;
@@ -103,58 +103,7 @@ value *create_value(void *new_val, var_type val_type) {
     return val;
 }
 
-void free_ast_outer(ast_t *t) {
-    string_free(t->id);
-    free_value(t->val);
-}
-
-void free_ast(ast_t *t) {
-	if (!t) return;
-    string_free(t->id);
-    free_value(t->val);
-	for (int i = 0; i < MC; i++) {
-		free_ast(t->c[i]);
-	}
-}
-
-ast_t *node0(int type) {
-	ast_t *ret = calloc(sizeof *ret, 1);
-	ret->type = type;
-
-	return ret;
-}
-
-ast_t *node1(int type, ast_t *c1) {
-	ast_t *ret = node0(type);
-	ret->c[0] = c1;
-
-	return ret;
-}
-
-ast_t *node2(int type, ast_t *c1, ast_t *c2) {
-	ast_t *ret = node1(type, c1);
-	ret->c[1] = c2;
-
-	return ret;
-}
-
-ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3) {
-	ast_t *ret = node2(type, c1, c2);
-	ret->c[2] = c3;
-
-	return ret;
-}
-
-void print_ast (ast_t *t) {
-	if (!t) return;
-	printf(" ( %d ", t->type);
-	for (int i = 0; i < MC; i++) {
-		print_ast(t->c[i]);
-	}
-	printf(" ) ");
-}
-
-value *ex (ast_t *t);
+val_t *ex (ast_t *t);
 void opt_ast ( ast_t *t);
 void env_pop();
 
@@ -166,7 +115,7 @@ enum {
 
 %union {
     string *id;
-    value *val;
+    val_t *val;
     ast_t *ast;
 }
 
@@ -226,7 +175,7 @@ ID:  id  { $$ = node0(id); $$->id = $1; }
 %%
 // TODO external file
 
-value *addition(value *a, value *b) {
+val_t *addition(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     switch (a->val_type) {
@@ -305,7 +254,7 @@ value *addition(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *subtraction(value *a, value *b) {
+val_t *subtraction(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -324,7 +273,7 @@ value *subtraction(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *multiplication(value *a, value *b) {
+val_t *multiplication(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -343,7 +292,7 @@ value *multiplication(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *division(value *a, value *b) {
+val_t *division(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -368,7 +317,7 @@ value *division(value *a, value *b) {
 }
 
 // TODO maybe also for string like operations?
-value *less_than(value *a, value *b) {
+val_t *less_than(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -382,7 +331,7 @@ value *less_than(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *greater_than(value *a, value *b) {
+val_t *greater_than(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -396,7 +345,7 @@ value *greater_than(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *less_equal_than(value *a, value *b) {
+val_t *less_equal_than(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -410,7 +359,7 @@ value *less_equal_than(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *greater_equal_than(value *a, value *b) {
+val_t *greater_equal_than(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -424,7 +373,7 @@ value *greater_equal_than(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *equal(value *a, value *b) {
+val_t *equal(val_t *a, val_t *b) {
     // TODO strcmp, null, ...
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
@@ -439,7 +388,7 @@ value *equal(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-value *power(value *a, value *b) {
+val_t *power(val_t *a, val_t *b) {
     if (!a || !b) return create_value(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
@@ -458,7 +407,7 @@ value *power(value *a, value *b) {
     return create_value(NULL, NULL_TYPE);
 }
 
-void print_value(value *val) {
+void print_value(val_t *val) {
     if (!val) {
         printf("> NULL\n");
         return;
@@ -489,7 +438,7 @@ void print_value(value *val) {
     }
 }
 
-int val_true(value *val) {
+int val_true(val_t *val) {
     switch(val->val_type) {
         case INT_TYPE:
             return val->val.intval != 0;
@@ -514,7 +463,7 @@ int val_true(value *val) {
     return false;
 }
 
-value *ex(ast_t *t) {
+val_t *ex(ast_t *t) {
     if (!t)
         return create_value(NULL, NULL_TYPE);
 
@@ -543,14 +492,14 @@ value *ex(ast_t *t) {
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
         case assign: {
-            value *res = ex(t->c[0]);
+            val_t *res = ex(t->c[0]);
             env_save(t->id, res);
             return res;
         }
         case val:
             return t->val;
         case id: {
-            var *cur = env_search(t->id);
+            var_t *cur = env_search(t->id);
             return cur ? cur->val : create_value(NULL, NULL_TYPE);
         }
         case lcurly: {
@@ -565,7 +514,7 @@ value *ex(ast_t *t) {
             return create_value(&input, INT_TYPE);
         }
         case _print: {
-            value *val = ex(t->c[0]);
+            val_t *val = ex(t->c[0]);
             print_value(val);
             return create_value(NULL, NULL_TYPE);
         }
@@ -600,7 +549,7 @@ void opt_ast(ast_t *t) {
   for (int i = 0; i < MC; i++)
     opt_ast(t->c[i]);
 
-  value *test_val;
+  val_t *test_val;
   switch (t->type) {
   case _if:
     // dead code elimination

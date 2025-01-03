@@ -7,13 +7,13 @@
 #include <stdlib.h>
 
 typedef struct _env_t {
-  queue *vars;
+  queue_t *vars;
   struct _env_t *parent;
 } env_t;
 
 void env_push();
 void pop_env();
-void env_save(string *id, value *val);
-var *env_search(string *id);
+var_t *env_search(string *id);
+void env_save(string *id, val_t *val);
 
 #endif // ENV_H
