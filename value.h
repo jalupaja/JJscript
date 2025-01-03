@@ -16,7 +16,7 @@ typedef enum {
   NULL_TYPE,
   STRING_TYPE,
   FUNCTION_TYPE
-} var_type_t;
+} val_type_t;
 
 union data_value {
   int intval;
@@ -27,7 +27,7 @@ union data_value {
 
 struct val_t {
   union data_value val;
-  var_type_t val_type;
+  val_type_t val_type;
 };
 
 struct var_t {
@@ -35,6 +35,7 @@ struct var_t {
   val_t *val;
 };
 
+val_t *create_value(void *new_val, val_type_t val_type);
 void free_value(val_t *val);
 
 #endif // VALUE_H

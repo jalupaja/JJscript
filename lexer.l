@@ -2,16 +2,13 @@
 /* TODO
 */
 
-typedef struct _ast_t ast_t;
-
 #include "string.h"
 #include "queue.h"
 #include "value.h"
+#include "ast.h"
 #include "parser.tab.h"
 
 #include <stdbool.h>
-
-val_t *create_value(void *new_val, var_type_t val_type);
 
 string *cur_str;
 
