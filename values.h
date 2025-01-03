@@ -15,16 +15,16 @@ union data_value {
   string *strval;
 };
 
-struct _value {
+typedef struct {
   union data_value val;
   var_type val_type;
-};
-typedef struct _value value;
+} value;
 
-struct _var {
+typedef struct {
   string *id;
   value *val;
-};
-typedef struct _var var;
+} var;
+
+void free_value(value *val);
 
 #endif // VALUES_H

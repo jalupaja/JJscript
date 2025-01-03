@@ -121,14 +121,6 @@ value *create_value(void *new_val, var_type val_type) {
     return val;
 }
 
-void free_value(value *val) {
-    if (val->val_type == STRING_TYPE) {
-        // free string as it will be overwritten
-        string_free(val->val.strval);
-    }
-    free(val);
-}
-
 void free_ast_outer(ast_t *t) {
     string_free(t->id);
     free_value(t->val);
@@ -620,7 +612,6 @@ value *ex(ast_t *t) {
 
     return create_value(NULL, NULL_TYPE);
 }
-
 
 void opt_ast ( ast_t *t) {
 	if (!t) return;
