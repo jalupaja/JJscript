@@ -211,7 +211,7 @@ enum {
 %define parse.error detailed
 
 %token _if _elif _else _while
-%token _input _inline_expr print <val> val <id> id
+%token _input _inline_expr _print <val> val <id> id
 %token assign eol
 %token _le _ge _eq
 %token lbrak rbrak lsquare rsquare lcurly rcurly
@@ -231,8 +231,8 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS CONDITIONAL { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
-STMT: print EXPR { $$ = node1(print, $2); }
-    | id assign EXPR { $$ = node1('=', $3); $$->id = $1; }
+STMT: _print EXPR { $$ = node1(_print, $2); }
+    | id assign EXPR { $$ = node1(assign, $3); $$->id = $1; }
 
 CONDITIONAL: _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
            | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
@@ -579,7 +579,7 @@ value *ex(ast_t *t) {
             return equal(ex(t->c[0]), ex(t->c[1]));
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
-        case '=': {
+        case assign: {
             value *res = ex(t->c[0]);
             queue_save_val(vars, t->id, res);
             return res;
@@ -595,7 +595,7 @@ value *ex(ast_t *t) {
             int input = input_int();
             return create_value(&input, INT_TYPE);
         }
-        case print: {
+        case _print: {
             value *val = ex(t->c[0]);
             print_value(val);
             return create_value(NULL, NULL_TYPE);
@@ -623,6 +623,8 @@ value *ex(ast_t *t) {
 }
 
 void opt_ast ( ast_t *t) {
+    // TODO
+    return;
 	if (!t) return;
 
 	for (int i = 0; i < MC; i++)
