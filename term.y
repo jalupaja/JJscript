@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define DEBUG 1
+
 /* TODO
 recursion (environments)
 for
@@ -137,13 +139,16 @@ void free_ast(ast_t *t) {
 
 void queue_save_val(queue *q, string *id, value *val) {
     var *cur = queue_search_id(q, id);
+    if (DEBUG) printf("assign: %s = %d", string_get_chars(id), val->val.intval);
     if (cur != NULL) {
         // id already exists -> update value
+        if (DEBUG) printf("(old)\n");
         free_value(cur->val);
         cur->val = val;
 
     } else {
         // enqueue new value
+        if (DEBUG) printf("(new)\n");
         var *new = (var *) malloc(sizeof(var));
         new->id = id;
         new->val = val;
