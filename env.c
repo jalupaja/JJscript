@@ -10,7 +10,7 @@
 
 env_t *cur_env = NULL;
 
-void queue_free(queue_t *q) {
+void queue_free(queue *q) {
   // TODO
 }
 
@@ -35,7 +35,7 @@ void env_pop() {
   }
 }
 
-var_t *queue_search(queue_t *q, string *id) {
+var_t *queue_search(queue *q, string *id) {
   var_t *cur;
   ssize_t q_len = queue_len(q);
   for (ssize_t i = 0; i < q_len; i++) {

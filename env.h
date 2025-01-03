@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 typedef struct _env_t {
-  queue_t *vars;
+  queue *vars;
   struct _env_t *parent;
 } env_t;
 

@@ -11,28 +11,28 @@ typedef struct node {
   struct node *prev;
 } node;
 
-struct queue_t {
+struct queue {
   node *head;
   node *tail;
   size_t size;
 };
 
-queue_t *queue_create() {
-  queue_t *q = (queue_t *)malloc(sizeof(queue_t));
+queue *queue_create() {
+  queue *q = (queue *)malloc(sizeof(queue));
   q->head = NULL;
   q->tail = NULL;
   q->size = 0;
   return q;
 }
 
-void queue_destroy(queue_t *q) {
+void queue_destroy(queue *q) {
   while (q->size > 0) {
     queue_dequeue(q);
   }
   free(q);
 }
 
-void queue_enqueue(queue_t *q, void *data) {
+void queue_enqueue(queue *q, void *data) {
   node *new_node = (node *)malloc(sizeof(node));
   new_node->val = data;
 
@@ -54,7 +54,7 @@ void queue_enqueue(queue_t *q, void *data) {
     printf("Enqueued element. New size: %zu\n", q->size);
 }
 
-void *queue_dequeue(queue_t *q) {
+void *queue_dequeue(queue *q) {
   if (q->size == 0)
     return NULL;
 
@@ -78,9 +78,9 @@ void *queue_dequeue(queue_t *q) {
   return data;
 }
 
-ssize_t queue_len(queue_t *q) { return q->size; }
+ssize_t queue_len(queue *q) { return q->size; }
 
-static node *find_item(queue_t *q, int n) {
+static node *find_item(queue *q, int n) {
   if (q->size == 0)
     return NULL;
 
@@ -100,7 +100,7 @@ static node *find_item(queue_t *q, int n) {
   return current;
 }
 
-void queue_enqueue_at(queue_t *q, void *data, int n) {
+void queue_enqueue_at(queue *q, void *data, int n) {
   if (q->size == 0 || n >= (int)q->size) {
     queue_enqueue(q, data);
     return;
@@ -125,7 +125,7 @@ void queue_enqueue_at(queue_t *q, void *data, int n) {
     printf("Enqueued at position %d. New size: %zu\n", n, q->size);
 }
 
-void *queue_dequeue_at(queue_t *q, int n) {
+void *queue_dequeue_at(queue *q, int n) {
   if (q->size == 0)
     return NULL;
 
@@ -153,12 +153,12 @@ void *queue_dequeue_at(queue_t *q, int n) {
   return data;
 }
 
-void *queue_at(queue_t *q, int n) {
+void *queue_at(queue *q, int n) {
   node *target = find_item(q, n);
   return target ? target->val : NULL;
 }
 
-void queue_print_all_val(queue_t *q, void (*print_func)(void *)) {
+void queue_print_all_val(queue *q, void (*print_func)(void *)) {
   if (q->size == 0) {
     printf("queue: NULL\n");
     return;
