@@ -3,6 +3,7 @@
 #include "queue.h"
 #include "values.h"
 #include "env.h"
+#include "ast.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -40,15 +41,6 @@ void yyerror (const char *msg) {
 int exec = 0;
 #define EXEC if (exec == 0)
 
-#define MC 3
-
-struct _ast_t {
-	int type;
-	string *id;
-    value *val;
-	struct _ast_t *c[MC];
-};
-typedef struct _ast_t ast_t;
 
 string *input() {
     string *str = string_create(NULL);
@@ -599,58 +591,60 @@ value *ex(ast_t *t) {
     return create_value(NULL, NULL_TYPE);
 }
 
-void opt_ast ( ast_t *t) {
-    // TODO
+void opt_ast(ast_t *t) {
+  // TODO
+  return;
+  if (!t)
     return;
-	if (!t) return;
 
-	for (int i = 0; i < MC; i++)
-		opt_ast(t->c[i]);
+  for (int i = 0; i < MC; i++)
+    opt_ast(t->c[i]);
 
-    value *test_val;
-	switch (t->type) {
-        case _if:
-            // dead code elimination
-            opt_ast(t->c[0]), opt_ast(t->c[1]);
-            if (t->c[2]) opt_ast(t->c[2]);
+  value *test_val;
+  switch (t->type) {
+  case _if:
+    // dead code elimination
+    opt_ast(t->c[0]), opt_ast(t->c[1]);
+    if (t->c[2])
+      opt_ast(t->c[2]);
 
-            if (t->c[0]->type == val && !val_true(t->c[0]->val)) {
-                printf("Eliminating true case\n");
-                free_ast(t->c[1]);
-                free_ast_outer(t);
-                if (t->c[2]) {
-                    memcpy(t, t->c[2], sizeof *t);
-                } else {
-                    t->type = NULL_TYPE; // TODO free?
-                }
-            } else if (t->c[0]->type == val && val_true(t->c[0]->val)) {
-                printf("Eliminating false case\n");
-                free_ast(t->c[2]);
-                free_ast_outer(t);
-                memcpy(t, t->c[1], sizeof *t);
-            }
-            break;
-        // TODO if else, else
-        // TODO dead code after return?
-        // TODO implement more, per file typecheck val_type. is type necessary/ is val_type...
-        // TODO global add/... functions for "all" datatypes?
-		case '+':
-            test_val = addition(t->c[0]->val, t->c[1]->val);
-            if (test_val->val_type != NULL_TYPE) {
-				t->type = val;
-				t->val = test_val;
+    if (t->c[0]->type == val && !val_true(t->c[0]->val)) {
+      printf("Eliminating true case\n");
+      ast_free(t->c[1]);
+      ast_free_outer(t);
+      if (t->c[2]) {
+        memcpy(t, t->c[2], sizeof *t);
+      } else {
+        t->type = NULL_TYPE; // TODO free?
+      }
+    } else if (t->c[0]->type == val && val_true(t->c[0]->val)) {
+      printf("Eliminating false case\n");
+      ast_free(t->c[2]);
+      ast_free_outer(t);
+      memcpy(t, t->c[1], sizeof *t);
+    }
+    break;
+    // TODO if else, else
+    // TODO dead code after return?
+    // TODO implement more, per file typecheck val_type. is type necessary/ is
+    // val_type...
+    // TODO global add/... functions for "all" datatypes?
+  case '+':
+    test_val = addition(t->c[0]->val, t->c[1]->val);
+    if (test_val->val_type != NULL_TYPE) {
+      t->type = val;
+      t->val = test_val;
 
-                // TODO create free_a... (id has to be freed too)
-                free_value(t->c[0]->val);
-                free_value(t->c[1]->val);
-				t->c[0] = t->c[1] = NULL;
-			} else {
-                free_value(test_val);
-            }
-            break;
-	}
+      // TODO create free_a... (id has to be freed too)
+      free_value(t->c[0]->val);
+      free_value(t->c[1]->val);
+      t->c[0] = t->c[1] = NULL;
+    } else {
+      free_value(test_val);
+    }
+    break;
+  }
 }
-
 
 int main (int argc, char **argv) {
     env_push(); // create main environment
