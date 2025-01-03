@@ -1,7 +1,7 @@
 #include "value.h"
 #include "string.h"
 
-void free_value(val_t *val) {
+void value_free(val_t *val) {
   if (val->val_type == STRING_TYPE) {
     // free string as it will be overwritten
     string_free(val->val.strval);
@@ -9,7 +9,7 @@ void free_value(val_t *val) {
   free(val);
 }
 
-val_t *create_value(void *new_val, val_type_t val_type) {
+val_t *value_create(void *new_val, val_type_t val_type) {
   val_t *val = (val_t *)malloc(sizeof(val_t));
   switch (val_type) {
   case INT_TYPE:

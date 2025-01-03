@@ -35,7 +35,7 @@ struct var_t {
   val_t *val;
 };
 
-val_t *create_value(void *new_val, val_type_t val_type);
-void free_value(val_t *val);
+val_t *value_create(void *new_val, val_type_t val_type);
+void value_free(val_t *val);
 
 #endif // VALUE_H

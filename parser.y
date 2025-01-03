@@ -151,7 +151,7 @@ ID:  id  { $$ = node0(id); $$->id = $1; }
 // TODO external file
 
 val_t *addition(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     switch (a->val_type) {
         case STRING_TYPE:
@@ -159,21 +159,21 @@ val_t *addition(val_t *a, val_t *b) {
                 case STRING_TYPE: {
                     string *res = string_copy(a->val.strval);
                     string_append_string(res, b->val.strval);
-                    return create_value(res, STRING_TYPE);
+                    return value_create(res, STRING_TYPE);
                 }
                 case INT_TYPE: {
                     char buffer[32];
                     snprintf(buffer, sizeof(buffer), "%d", b->val.intval);
                     string *res = string_copy(a->val.strval);
                     string_append_chars(res, buffer);
-                    return create_value(res, STRING_TYPE);
+                    return value_create(res, STRING_TYPE);
                 }
                 case FLOAT_TYPE: {
                     char buffer[64];
                     snprintf(buffer, sizeof(buffer), "%f", b->val.floatval);
                     string *res = string_copy(a->val.strval);
                     string_append_chars(res, buffer);
-                    return create_value(res, STRING_TYPE);
+                    return value_create(res, STRING_TYPE);
                 }
                 default:
                     break;
@@ -186,15 +186,15 @@ val_t *addition(val_t *a, val_t *b) {
                     snprintf(buffer, sizeof(buffer), "%d", a->val.intval);
                     string *res = string_create(buffer);
                     string_append_string(res, b->val.strval);
-                    return create_value(res, STRING_TYPE);
+                    return value_create(res, STRING_TYPE);
                 }
                 case INT_TYPE: {
                     int res = a->val.intval + b->val.intval;
-                    return create_value(&res, INT_TYPE);
+                    return value_create(&res, INT_TYPE);
                 }
                 case FLOAT_TYPE: {
                     double res = a->val.intval + b->val.floatval;
-                    return create_value(&res, FLOAT_TYPE);
+                    return value_create(&res, FLOAT_TYPE);
                 }
                 default:
                     break;
@@ -207,15 +207,15 @@ val_t *addition(val_t *a, val_t *b) {
                     snprintf(buffer, sizeof(buffer), "%f", a->val.floatval);
                     string *res = string_create(buffer);
                     string_append_string(res, b->val.strval);
-                    return create_value(res, STRING_TYPE);
+                    return value_create(res, STRING_TYPE);
                 }
                 case INT_TYPE: {
                     double res = a->val.floatval + b->val.intval;
-                    return create_value(&res, FLOAT_TYPE);
+                    return value_create(&res, FLOAT_TYPE);
                 }
                 case FLOAT_TYPE: {
                     double res = a->val.floatval + b->val.floatval;
-                    return create_value(&res, FLOAT_TYPE);
+                    return value_create(&res, FLOAT_TYPE);
                 }
                 default:
                     break;
@@ -226,11 +226,11 @@ val_t *addition(val_t *a, val_t *b) {
     }
 
     printf("Unsupported add operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *subtraction(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
@@ -238,18 +238,18 @@ val_t *subtraction(val_t *a, val_t *b) {
         if (a->val_type == FLOAT_TYPE || b->val_type == FLOAT_TYPE) {
             double res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) -
                          (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-            return create_value(&res, FLOAT_TYPE);
+            return value_create(&res, FLOAT_TYPE);
         } else {
             int res = a->val.intval - b->val.intval;
-            return create_value(&res, INT_TYPE);
+            return value_create(&res, INT_TYPE);
         }
     }
     printf("Unsupported sub operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *multiplication(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
@@ -257,114 +257,114 @@ val_t *multiplication(val_t *a, val_t *b) {
         if (a->val_type == FLOAT_TYPE || b->val_type == FLOAT_TYPE) {
             double res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) *
                          (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-            return create_value(&res, FLOAT_TYPE);
+            return value_create(&res, FLOAT_TYPE);
         } else {
             int res = a->val.intval * b->val.intval;
-            return create_value(&res, INT_TYPE);
+            return value_create(&res, INT_TYPE);
         }
     }
     printf("Unsupported mul operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *division(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
         if ((b->val_type == INT_TYPE && b->val.intval == 0) ||
             (b->val_type == FLOAT_TYPE && b->val.floatval == 0.0)) {
             printf("Error: Division by zero\n");
-            return create_value(NULL, NULL_TYPE);
+            return value_create(NULL, NULL_TYPE);
         }
 
         if (a->val_type == FLOAT_TYPE || b->val_type == FLOAT_TYPE) {
             double res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) /
                          (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-            return create_value(&res, FLOAT_TYPE);
+            return value_create(&res, FLOAT_TYPE);
         } else {
             int res = a->val.intval / b->val.intval;
-            return create_value(&res, INT_TYPE);
+            return value_create(&res, INT_TYPE);
         }
     }
     printf("Unsupported div operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 // TODO maybe also for string like operations?
 val_t *less_than(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
 
         bool res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) <
                    (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-        return create_value(&res, BOOL_TYPE);
+        return value_create(&res, BOOL_TYPE);
     }
     printf("Unsupported less_than operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *greater_than(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
 
         bool res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) >
                    (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-        return create_value(&res, BOOL_TYPE);
+        return value_create(&res, BOOL_TYPE);
     }
     printf("Unsupported greater_than operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *less_equal_than(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
 
         bool res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) <=
                    (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-        return create_value(&res, BOOL_TYPE);
+        return value_create(&res, BOOL_TYPE);
     }
     printf("Unsupported less_equal_than operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *greater_equal_than(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
 
         bool res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) >=
                    (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-        return create_value(&res, BOOL_TYPE);
+        return value_create(&res, BOOL_TYPE);
     }
     printf("Unsupported greater_equal_than operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *equal(val_t *a, val_t *b) {
     // TODO strcmp, null, ...
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
 
         bool res = (a->val_type == INT_TYPE ? a->val.intval : a->val.floatval) ==
                    (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval);
-        return create_value(&res, BOOL_TYPE);
+        return value_create(&res, BOOL_TYPE);
     }
     printf("Unsupported equal operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 val_t *power(val_t *a, val_t *b) {
-    if (!a || !b) return create_value(NULL, NULL_TYPE);
+    if (!a || !b) return value_create(NULL, NULL_TYPE);
 
     if ((a->val_type == INT_TYPE || a->val_type == FLOAT_TYPE) &&
         (b->val_type == INT_TYPE || b->val_type == FLOAT_TYPE)) {
@@ -372,14 +372,14 @@ val_t *power(val_t *a, val_t *b) {
         if (a->val_type == FLOAT_TYPE || b->val_type == FLOAT_TYPE) {
             double res = pow((a->val_type == INT_TYPE ? a->val.intval : a->val.floatval),
                              (b->val_type == INT_TYPE ? b->val.intval : b->val.floatval));
-            return create_value(&res, FLOAT_TYPE);
+            return value_create(&res, FLOAT_TYPE);
         } else {
             int res = (int)pow(a->val.intval, b->val.intval);
-            return create_value(&res, INT_TYPE);
+            return value_create(&res, INT_TYPE);
         }
     }
     printf("Unsupported power operation between types %d and %d\n", a->val_type, b->val_type);
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 void print_value(val_t *val) {
@@ -440,7 +440,7 @@ int val_true(val_t *val) {
 
 val_t *ex(ast_t *t) {
     if (!t)
-        return create_value(NULL, NULL_TYPE);
+        return value_create(NULL, NULL_TYPE);
 
     switch (t->type) {
         case STMTS:
@@ -475,7 +475,7 @@ val_t *ex(ast_t *t) {
             return t->val;
         case id: {
             var_t *cur = env_search(t->id);
-            return cur ? cur->val : create_value(NULL, NULL_TYPE);
+            return cur ? cur->val : value_create(NULL, NULL_TYPE);
         }
         case lcurly: {
             env_push();
@@ -486,12 +486,12 @@ val_t *ex(ast_t *t) {
         case _input: {
             // TODO default is string? or try to make double > int > bool > str
             int input = input_int();
-            return create_value(&input, INT_TYPE);
+            return value_create(&input, INT_TYPE);
         }
         case _print: {
             val_t *val = ex(t->c[0]);
             print_value(val);
-            return create_value(NULL, NULL_TYPE);
+            return value_create(NULL, NULL_TYPE);
         }
         case _if:
             if (val_true(ex(t->c[0]))) {
@@ -499,20 +499,20 @@ val_t *ex(ast_t *t) {
             } else if (t->c[2]) {
                 return ex(t->c[2]);
             }
-            return create_value(NULL, NULL_TYPE);
+            return value_create(NULL, NULL_TYPE);
         case _else:
             return ex(t->c[0]);
         case _while:
             while (val_true(ex(t->c[0]))) {
                 ex(t->c[1]);
             }
-            return create_value(NULL, NULL_TYPE);
+            return value_create(NULL, NULL_TYPE);
         default:
             printf("Unsupported node type %d\n", t->type);
             break;
     }
 
-    return create_value(NULL, NULL_TYPE);
+    return value_create(NULL, NULL_TYPE);
 }
 
 void opt_ast(ast_t *t) {
@@ -560,11 +560,11 @@ void opt_ast(ast_t *t) {
       t->val = test_val;
 
       // TODO create free_a... (id has to be freed too)
-      free_value(t->c[0]->val);
-      free_value(t->c[1]->val);
+      value_free(t->c[0]->val);
+      value_free(t->c[1]->val);
       t->c[0] = t->c[1] = NULL;
     } else {
-      free_value(test_val);
+      value_free(test_val);
     }
     break;
   }

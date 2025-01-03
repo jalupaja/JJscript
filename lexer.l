@@ -70,7 +70,7 @@ EOL ";"
 <COMMENT>{BLOCK_COMMENT_OUT} { yy_pop_state(); }
 
 {MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); cur_str = string_create(NULL); }
-<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
 <MULTI_STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
 <MULTI_STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '\"'); /* append " on \" */ }
 <MULTI_STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
@@ -79,7 +79,7 @@ EOL ";"
 <MULTI_STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
 {STR_DOUBLE} { /* string with double quotes */ yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); cur_str = string_create(NULL); }
-<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
 <STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
 <STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
 <STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
@@ -88,12 +88,12 @@ EOL ";"
 <STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
 {MULTI_STR_SINGLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_SINGLE); cur_str = string_create(NULL); }
-<MULTI_STRING_SINGLE>"'''" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<MULTI_STRING_SINGLE>"'''" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
 <MULTI_STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); }
 <MULTI_STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); cur_str = string_create(NULL); }
-<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = create_value(cur_str, STRING_TYPE); return val; }
+<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
 <STRING_SINGLE>"''" { string_append_char(cur_str, '\''); /* append ' on '' */ }
 <STRING_SINGLE>"\n" { yyterminate(); /* TODO crash if string isn't finished... */ }
 <STRING_SINGLE>. { string_append_chars(cur_str, yytext); }

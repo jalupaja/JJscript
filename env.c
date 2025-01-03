@@ -69,7 +69,7 @@ void env_save(string *id, val_t *val) {
     // id already exists -> update value
     if (DEBUG)
       printf("(old)\n");
-    free_value(cur->val);
+    value_free(cur->val);
     cur->val = val;
 
   } else {
