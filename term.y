@@ -497,7 +497,11 @@ void print_value(value *val) {
     }
     switch (val->val_type) {
         case INT_TYPE:
-            printf("> %o\n", val->val.intval); // OCTAL
+            // Apparently printf can't print negative numbers
+            if (val->val.intval < 0)
+                printf("> -%o\n", -val->val.intval); // OCTAL
+            else
+                printf("> %o\n", val->val.intval); // OCTAL
             break;
         case FLOAT_TYPE:
             printf("> %f\n", val->val.floatval);
