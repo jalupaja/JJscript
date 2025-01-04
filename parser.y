@@ -215,15 +215,22 @@ val_t *ex(ast_t *t) {
                 return value_create(NULL, NULL_TYPE);
             }
 
-            queue *args = t->val->val.qval;
+            queue *old_args = t->val->val.qval;
+            queue *new_args = queue_create();
 
-            size_t q_len = queue_len(args);
+            size_t q_len = queue_len(old_args);
             for (size_t i = 0; i < q_len; i++) {
-                val_t *new_val = ex((ast_t *)queue_dequeue(args));
-                queue_enqueue(args, new_val);
+                val_t *new_val = ex((ast_t *)queue_at(old_args, i));
+                queue_enqueue(new_args, new_val);
             }
 
-            val_t *result = fun_call(t->id, args);
+            if (DEBUG) {
+                printf("ARGS: ");
+                queue_print(new_args, (void (*)(void*)) value_print);
+                printf("\n");
+            }
+
+            val_t *result = fun_call(t->id, new_args);
 
             queue_free(new_args);
 
