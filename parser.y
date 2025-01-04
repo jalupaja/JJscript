@@ -442,7 +442,25 @@ val_t *ex(ast_t *t) {
             return t->val;
         case fun: {
             var_t *cur = env_search(t->id);
-            return cur ? fun_call(t->id, t->val->val.qval) : value_create(NULL, NULL_TYPE);
+            if (!cur || cur->val->val_type != FUNCTION_TYPE) {
+                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(t->id));
+                return value_create(NULL, NULL_TYPE);
+            }
+
+            queue *args = t->val->val.qval;
+
+            size_t q_len = queue_len(args);
+            for (size_t i = 0; i < q_len; i++) {
+                val_t *new_val = ex((ast_t *)queue_dequeue(args));
+                queue_enqueue(args, new_val);
+            }
+
+            val_t *result = fun_call(t->id, args);
+
+            // TODO free old queue (could be done more often...)
+            // queue_free(args);
+
+            return result;
         }
         case id: {
             var_t *cur = env_search(t->id);
