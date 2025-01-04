@@ -33,6 +33,9 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   case FUNCTION_TYPE:
     val->val.funval = (fun_t *)new_val;
     break;
+  case EMBED_TYPE:
+    val->val.embval = (emb_t *)new_val;
+    break;
   default:
     break;
   }
@@ -41,41 +44,50 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   return val;
 }
 
-void value_print(val_t *val) {
+string *val2string(val_t *val) {
   if (!val) {
-    printf("NULL");
-    return;
+    return string_create("NULL");
   }
+
   switch (val->val_type) {
-  case INT_TYPE:
+  case INT_TYPE: {
+    char buf[32];
     // Apparently printf can't print negative numbers
     if (val->val.intval < 0)
-      printf("-%o", -val->val.intval); // OCTAL
+      snprintf(buf, sizeof(buf), "-%o", -val->val.intval); // OCTAL
     else
-      printf("%o", val->val.intval); // OCTAL
-    break;
-  case FLOAT_TYPE:
-    printf("%f", val->val.floatval);
-    break;
-  case STRING_TYPE:
-    printf("%s", string_get_chars(val->val.strval));
-    break;
+      snprintf(buf, sizeof(buf), "%o", val->val.intval); // OCTAL
+    return string_create(buf);
+  }
+  case FLOAT_TYPE: {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%f", val->val.floatval);
+    return string_create(buf);
+  }
   case BOOL_TYPE:
-    printf("%s", val->val.boolval ? "true" : "false");
-    break;
+    return string_create(val->val.boolval ? "true" : "false");
   case NULL_TYPE:
-    printf("NULL");
-    break;
+    return string_create("NULL");
+  case STRING_TYPE:
+    return string_copy(val->val.strval);
+  case QUEUE_TYPE:
+    return queue_to_string(val->val.qval, (string * (*)(void *)) val2string);
   case FUNCTION_TYPE:
-    printf("FUNCTION");
-    break;
+    return string_create("FUNCTION");
+  case EMBED_TYPE:
+    return string_create("EMBEDDING (how are you here)?");
   default:
-    printf("Unknown type");
-    break;
+    return string_create("Unknown type");
   }
 }
 
-int val_true(val_t *val) {
+void value_print(val_t *val) {
+  string *str = val2string(val);
+  printf("%s", string_get_chars(str));
+  string_free(str);
+}
+
+bool val2bool(val_t *val) {
   switch (val->val_type) {
   case INT_TYPE:
     return val->val.intval != 0;

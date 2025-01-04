@@ -8,38 +8,19 @@ val_t *addition(val_t *a, val_t *b) {
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
+  // TODO add BOOL_TYPE QUEUE_TYPE
   switch (a->val_type) {
-  case STRING_TYPE:
-    switch (b->val_type) {
-    case STRING_TYPE: {
-      string *res = string_copy(a->val.strval);
-      string_append_string(res, b->val.strval);
-      return value_create(res, STRING_TYPE);
-    }
-    case INT_TYPE: {
-      char buffer[32];
-      snprintf(buffer, sizeof(buffer), "%d", b->val.intval);
-      string *res = string_copy(a->val.strval);
-      string_append_chars(res, buffer);
-      return value_create(res, STRING_TYPE);
-    }
-    case FLOAT_TYPE: {
-      char buffer[64];
-      snprintf(buffer, sizeof(buffer), "%f", b->val.floatval);
-      string *res = string_copy(a->val.strval);
-      string_append_chars(res, buffer);
-      return value_create(res, STRING_TYPE);
-    }
-    default:
-      break;
-    }
-    break;
+  case STRING_TYPE: {
+    string *res = string_copy(a->val.strval);
+    string *append = val2string(b);
+    string_append_string(res, append);
+    string_free(append);
+    return value_create(res, STRING_TYPE);
+  }
   case INT_TYPE:
     switch (b->val_type) {
     case STRING_TYPE: {
-      char buffer[32];
-      snprintf(buffer, sizeof(buffer), "%d", a->val.intval);
-      string *res = string_create(buffer);
+      string *res = val2string(a);
       string_append_string(res, b->val.strval);
       return value_create(res, STRING_TYPE);
     }
@@ -58,9 +39,7 @@ val_t *addition(val_t *a, val_t *b) {
   case FLOAT_TYPE:
     switch (b->val_type) {
     case STRING_TYPE: {
-      char buffer[64];
-      snprintf(buffer, sizeof(buffer), "%f", a->val.floatval);
-      string *res = string_create(buffer);
+      string *res = val2string(a);
       string_append_string(res, b->val.strval);
       return value_create(res, STRING_TYPE);
     }

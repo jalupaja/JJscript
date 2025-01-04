@@ -1,5 +1,6 @@
 %{
 #include "function.h"
+#include "embed.h"
 #include "string.h"
 #include "queue.h"
 #include "value.h"
@@ -99,13 +100,15 @@ enum {
 %define parse.error detailed
 
 %token _if _elif _else _while
+%token _str str_start str_part <val> str_end
+%token embed_start embed_end
 %token _input _inline_expr _print <val> val fun <id> _id
 %token assign_id assign_fun eol delim
 %token _le _ge _eq
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAM_LIST PARAMS ARGS
-%type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE
+%type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE STRING EMBEDS
 
 %precedence delim
 %right assign
@@ -122,8 +125,8 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
-    | FUN_CALL
     | _id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
+    | EXPR
 
 NON_STMT: lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
         | _id assign lcurly PARAMS STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($4, $5), FUNCTION_TYPE); /* assign a function */ }
@@ -145,8 +148,7 @@ IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
       | _else lcurly STMTS rcurly { $$ = node1(_else, $3); }
       | %empty { $$ = NULL; }
 
-EXPR:
-      EXPR '-' EXPR { $$ = node2('-', $1, $3); }
+EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '+' EXPR { $$ = node2('+', $1, $3); }
     | EXPR '*' EXPR { $$ = node2('*', $1, $3); }
     | EXPR '/' EXPR { $$ = node2('/', $1, $3); }
@@ -160,7 +162,19 @@ EXPR:
     | VAL
     | FUN_CALL
     | ID
+    | STRING
     | _input { $$ = node0(_input); }
+
+STRING: str_start EMBEDS str_end { $$ = node0(_str);
+              string *str = string_copy($3->val.strval);
+              $$->val = value_create(embed_create($2, str, STRING_TYPE), EMBED_TYPE);
+                        // ast_free($1); // TODO
+                        // ast_free($3); // TODO
+                        // TODO allow more then one EMBED
+              }
+
+EMBEDS: embed_start STMTS embed_end { $$ = $2; }
+      | %empty { $$ = NULL; }
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
 FUN_CALL: _id lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
@@ -205,6 +219,24 @@ val_t *ex(ast_t *t) {
         case assign_fun: {
             env_save(t->id, t->val);
             return t->val;
+        }
+        case _str: {
+            // TODO missing string from str_start
+            // TODO
+            emb_t *emb = t->val->val.embval;
+
+            if (emb->embeds) {
+                env_push();
+                val_t *suffix = ex(emb->embeds);
+                string *str = string_copy(suffix->val.strval);
+                env_pop();
+
+                string_append_string(str, emb->str_end);
+                // embed_free(emb); // TODO
+                return value_create(str, STRING_TYPE);
+            } else {
+                return value_create(emb->str_end, STRING_TYPE);
+            }
         }
         case val:
             return t->val;
@@ -261,7 +293,7 @@ val_t *ex(ast_t *t) {
             return value_create(NULL, NULL_TYPE);
         }
         case _if:
-            if (val_true(ex(t->c[0]))) {
+            if (val2bool(ex(t->c[0]))) {
                 return ex(t->c[1]);
             } else if (t->c[2]) {
                 return ex(t->c[2]);
@@ -270,7 +302,7 @@ val_t *ex(ast_t *t) {
         case _else:
             return ex(t->c[0]);
         case _while:
-            while (val_true(ex(t->c[0]))) {
+            while (val2bool(ex(t->c[0]))) {
                 ex(t->c[1]);
             }
             return value_create(NULL, NULL_TYPE);
@@ -341,7 +373,7 @@ void opt_ast(ast_t *t) {
     if (t->c[2])
       opt_ast(t->c[2]);
 
-    if (t->c[0]->type == val && !val_true(t->c[0]->val)) {
+    if (t->c[0]->type == val && !val2bool(t->c[0]->val)) {
       ast_free(t->c[1]);
       ast_free_outer(t);
       if (t->c[2]) {
@@ -349,7 +381,7 @@ void opt_ast(ast_t *t) {
       } else {
         t->type = NULL_TYPE; // TODO free?
       }
-    } else if (t->c[0]->type == val && val_true(t->c[0]->val)) {
+    } else if (t->c[0]->type == val && val2bool(t->c[0]->val)) {
       ast_free(t->c[2]);
       ast_free_outer(t);
       memcpy(t, t->c[1], sizeof *t);

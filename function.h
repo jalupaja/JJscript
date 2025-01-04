@@ -11,7 +11,6 @@ typedef struct fun_t fun_t;
 typedef struct ast_t ast_t;
 
 struct fun_t {
-  int test;
   queue *params;
   ast_t *body;
 };

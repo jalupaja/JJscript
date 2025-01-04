@@ -18,6 +18,7 @@ string *cur_str;
 */
 %}
 
+%x EMBED
 %x STRING_DOUBLE
 %x MULTI_STRING_DOUBLE
 %x STRING_SINGLE
@@ -70,8 +71,12 @@ EOL ";"
 <COMMENT>. { }
 <COMMENT>{BLOCK_COMMENT_OUT} { yy_pop_state(); }
 
-{MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); cur_str = string_create(NULL); }
-<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
+
+
+
+
+{MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); cur_str = string_create(NULL); return str_start; }
+<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <MULTI_STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
 <MULTI_STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '\"'); /* append " on \" */ }
 <MULTI_STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
@@ -79,14 +84,27 @@ EOL ";"
 <MULTI_STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
 <MULTI_STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
-{STR_DOUBLE} { /* string with double quotes */ yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); cur_str = string_create(NULL); }
-<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
-<STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
-<STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
+
+
+
+
+
+{STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); cur_str = string_create(NULL); return str_start; }
+<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
+<STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '"'); return str_part; /* append " on \" */ }
+<STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); return str_part; /* append \ on \\ */ }
 <STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
 <STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
 <STRING_DOUBLE>"\n" { yyterminate(); /* TODO crash if string isn't finished??? */ }
+<STRING_DOUBLE>"{" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_start; }
 <STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
+
+
+
+
+
+
+
 
 {MULTI_STR_SINGLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_SINGLE); cur_str = string_create(NULL); }
 <MULTI_STRING_SINGLE>"'''" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
@@ -122,12 +140,13 @@ EOL ";"
 {RBRAK}     { return rbrak; }
 {LSQARE}    { return lsquare; }
 {RSQARE}    { return rsquare; }
-{LCURLY}    { return lcurly; }
-{RCURLY}    { return rcurly; }
+{LCURLY}    { yy_push_state(YYSTATE); BEGIN(INITIAL); return lcurly; }
+{RCURLY}    { yy_pop_state(); return rcurly; }
 
 [ \n\t]
 
 .   { printf("UNKNOWN: %s\n", yytext); }
+
 
 %%
 

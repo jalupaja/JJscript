@@ -1,4 +1,5 @@
 #include "queue.h"
+#include "string.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +50,14 @@ void queue_enqueue(queue *q, void *data) {
     printf("Enqueued element. New size: %zu\n", q->size);
 }
 
+void queue_append(queue *q1, queue *q2) {
+  node *cur = q2->head;
+  while (cur != NULL) {
+    queue_enqueue(q1, cur->val);
+    cur = cur->next;
+  }
+}
+
 void *queue_dequeue(queue *q) {
   if (q->size == 0)
     return NULL;
@@ -80,6 +89,16 @@ void queue_free(queue *q) {
   free(q);
 }
 
+queue *queue_copy(queue *q) {
+  queue *new_queue = queue_create();
+  node *cur = q->head;
+  while (cur != NULL) {
+    queue_enqueue(new_queue, cur->val);
+    cur = cur->next;
+  }
+  return new_queue;
+}
+
 ssize_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, int n) {
@@ -106,7 +125,7 @@ static node *find_item(queue *q, int n) {
 }
 
 void queue_enqueue_at(queue *q, void *data, int n) {
-  if (q->size == 0 || n >= (int)q->size) {
+  if (q->size == 0) {
     queue_enqueue(q, data);
     return;
   }
@@ -128,6 +147,21 @@ void queue_enqueue_at(queue *q, void *data, int n) {
   q->size++;
   if (DEBUG)
     printf("Enqueued at position %d. New size: %zu\n", n, q->size);
+}
+
+void queue_append_at(queue *q1, queue *q2, int n) {
+  if (q1->size == 0) {
+    queue_append(q1, q2);
+    return;
+  }
+
+  ssize_t q2_len = q2->size;
+  node *new_node = q2->head;
+
+  for (ssize_t i = 0; i < q2_len; i++) {
+    queue_enqueue_at(q1, new_node->val, n + i);
+    new_node = new_node->next;
+  }
 }
 
 void *queue_dequeue_at(queue *q, int n) {
@@ -158,10 +192,36 @@ void *queue_dequeue_at(queue *q, int n) {
   return data;
 }
 
-#include "string.h"
 void *queue_at(queue *q, int n) {
   node *res = find_item(q, n);
   return res ? res->val : NULL;
+}
+
+string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
+  if (q->size == 0) {
+    return string_create("NULL");
+  }
+
+  node *current = q->head;
+
+  string *str = string_create("[");
+  string *tmp_str;
+
+  for (size_t i = 0; i < q->size - 1; i++) {
+    tmp_str = to_string_func(current->val);
+    string_append_string(str, tmp_str);
+    string_free(tmp_str);
+
+    string_append_chars(str, ", ");
+    current = current->next;
+  }
+  tmp_str = to_string_func(current->val);
+  string_append_string(str, tmp_str);
+  string_free(tmp_str);
+
+  string_append_chars(str, "]");
+
+  return str;
 }
 
 void queue_print(queue *q, void (*print_func)(void *)) {
