@@ -107,11 +107,11 @@ enum {
 %token _le _ge _eq
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
-%type <queue> PARAM_LIST PARAMS ARGS
+%type <queue> PARAMS ARGS
 %type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE STRING EMBEDS
 
 %precedence delim
-%right assign
+%left assign
 %left '<' '>' _le _ge _eq
 %left '-' '+'
 %left '*' '/'
@@ -126,17 +126,15 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | _id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
-    | EXPR
+    | EXPR { $$ = $1; }
 
-NON_STMT: lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
-        | _id assign lcurly PARAMS STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($4, $5), FUNCTION_TYPE); /* assign a function */ }
+
+NON_STMT: _id assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
+        | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
-PARAMS: lbrak PARAM_LIST rbrak { $$ = $2; }
-      | %empty { $$ = queue_create(); }
-
-PARAM_LIST: PARAM_LIST delim ID { queue_enqueue($1, $3->id); $$ = $1; }
+PARAMS: PARAMS delim ID { queue_enqueue($1, $3->id); $$ = $1; }
       | ID { $$ = queue_create(); queue_enqueue($$, $1->id); }
       | %empty { $$ = queue_create(); }
 
