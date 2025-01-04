@@ -225,8 +225,7 @@ val_t *ex(ast_t *t) {
 
             val_t *result = fun_call(t->id, args);
 
-            // TODO free old queue (could be done more often...)
-            // queue_free(args);
+            queue_free(new_args);
 
             return result;
         }
@@ -236,6 +235,7 @@ val_t *ex(ast_t *t) {
             return cur ? cur->val : value_create(NULL, NULL_TYPE);
         }
         case lcurly: {
+            // local environment
             env_push();
             ex(t->c[0]);
             env_pop();
@@ -268,6 +268,7 @@ val_t *ex(ast_t *t) {
             }
             return value_create(NULL, NULL_TYPE);
         default:
+            // TODO ERROR
             printf("Unsupported node type %d\n", t->type);
             break;
     }
@@ -286,11 +287,8 @@ val_t *fun_call(string *id, queue *args) {
     printf("Error: '%s' is not a function \n", string_get_chars(id));
     return value_create(NULL, NULL_TYPE);
   }
+
   fun_t *fun = var->val->val.funval;
-  if (!fun) {
-    printf("Error: Function '%s' not found\n", string_get_chars(id));
-    return value_create(NULL, NULL_TYPE);
-  }
 
   // start new environment
   env_push();
