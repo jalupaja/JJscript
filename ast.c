@@ -46,12 +46,17 @@ ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3) {
   return ret;
 }
 
-void print_ast(ast_t *t) {
+void ast_print(ast_t *t) {
   if (!t)
     return;
-  printf(" ( %d ", t->type);
+  printf(" ( %d", t->type);
   for (int i = 0; i < MC; i++) {
-    print_ast(t->c[i]);
+    if (t->val) {
+      printf("/");
+      value_print(t->val);
+    }
+    printf(" ");
+    ast_print(t->c[i]);
   }
   printf(" ) ");
 }

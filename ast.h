@@ -27,6 +27,6 @@ ast_t *node2(int type, ast_t *c1, ast_t *c2);
 
 ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3);
 
-void print_ast(ast_t *t);
+void ast_print(ast_t *t);
 
 #endif // AST_H
