@@ -100,8 +100,7 @@ enum {
 %define parse.error detailed
 
 %token _if _elif _else _while
-%token _str str_start str_part <val> str_end
-%token embed_start embed_end
+%token _str str_start str_part <val> embed_lcurly str_end
 %token _input _inline_expr _print <val> val fun <id> _id
 %token assign_id assign_fun eol delim
 %token _le _ge _eq
@@ -126,11 +125,8 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | _id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
-    | EXPR { $$ = $1; }
-
 
 NON_STMT: _id assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
-        | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
@@ -157,6 +153,7 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '>' EXPR { $$ = node2('>', $1, $3); }
     | EXPR '^' EXPR { $$ = node2('^', $1, $3); }
     | lbrak EXPR rbrak  { $$ = $2; }
+    | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
     | VAL
     | FUN_CALL
     | ID
@@ -164,6 +161,7 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | _input { $$ = node0(_input); }
 
 STRING: str_start EMBEDS str_end { $$ = node0(_str);
+      // TODO need beginning string here
               string *str = string_copy($3->val.strval);
               $$->val = value_create(embed_create($2, str, STRING_TYPE), EMBED_TYPE);
                         // ast_free($1); // TODO
@@ -171,7 +169,7 @@ STRING: str_start EMBEDS str_end { $$ = node0(_str);
                         // TODO allow more then one EMBED
               }
 
-EMBEDS: embed_start STMTS embed_end { $$ = $2; }
+EMBEDS: embed_lcurly EXPR rcurly { $$ = $2; }
       | %empty { $$ = NULL; }
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
@@ -225,9 +223,13 @@ val_t *ex(ast_t *t) {
 
             if (emb->embeds) {
                 env_push();
+
                 val_t *suffix = ex(emb->embeds);
-                string *str = string_copy(suffix->val.strval);
+                value_print(suffix);
+                string *str = val2string(suffix);
+
                 env_pop();
+                value_free(suffix);
 
                 string_append_string(str, emb->str_end);
                 // embed_free(emb); // TODO
