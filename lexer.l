@@ -110,7 +110,7 @@ EOL ";"
 {FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
 {BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
-{ID}        { yylval.id = string_create(yytext); return id;  }
+{ID}        { yylval.id = string_create(yytext); return _id; }
 {EOL}       { return eol; }
 {LE}        { return _le; }
 {GE}        { return _ge; }
