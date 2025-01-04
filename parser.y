@@ -3,10 +3,10 @@
 #include "string.h"
 #include "queue.h"
 #include "value.h"
+#include "value_calc.h"
 #include "env.h"
 #include "ast.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
