@@ -462,7 +462,9 @@ val_t *ex(ast_t *t) {
         }
         case _print: {
             val_t *val = ex(t->c[0]);
-            print_value(val);
+            printf("> ");
+            value_print(val);
+            printf("\n");
             return value_create(NULL, NULL_TYPE);
         }
         case _if:

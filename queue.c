@@ -179,5 +179,5 @@ void queue_print_all_val(queue *q, void (*print_func)(void *)) {
     current = current->next;
   }
   print_func(current->val);
-  printf("]");
+  printf("]\n");
 }
