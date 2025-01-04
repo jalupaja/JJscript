@@ -70,7 +70,8 @@ var_t *env_search_top(string *id) {
 void env_save(string *id, val_t *val) {
   var_t *cur = env_search_top(id);
   if (DEBUG)
-    printf("assign: %s = %d", string_get_chars(id), val->val.intval);
+    printf("assign(env: %p): %s = %d", cur_env, string_get_chars(id),
+           val->val.intval);
   if (cur != NULL) {
     // id already exists -> update value
     if (DEBUG)

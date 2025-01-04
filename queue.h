@@ -12,6 +12,6 @@ ssize_t queue_len(queue *q);
 void queue_enqueue_at(queue *q, void *data, int n);
 void *queue_dequeue_at(queue *q, int n);
 void *queue_at(queue *q, int n);
-void queue_print_all_val(queue *q, void (*print_func)(void *));
+void queue_print(queue *q, void (*print_func)(void *));
 
 #endif // QUEUE_H_

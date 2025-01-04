@@ -78,6 +78,7 @@ char *input_chars() {
     return ret;
 }
 
+typedef struct ast_t ast_t;
 val_t *ex (ast_t *t);
 val_t *fun_call(string *id, queue *args);
 void opt_ast ( ast_t *t);
@@ -107,7 +108,6 @@ enum {
 %type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE
 
 %precedence delim
-%left id
 %right assign
 %left '<' '>' _le _ge _eq
 %left '-' '+'
@@ -122,11 +122,11 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
-    | FUN_CALL { }
-    | id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
+    | FUN_CALL
+    | _id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
 
-NON_STMT: lcurly STMTS rcurly { $$ = node1(lcurly, $2); }
-        | id assign lcurly PARAMS STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($4, $5), FUNCTION_TYPE); /* assign a function */ }
+NON_STMT: lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
+        | _id assign lcurly PARAMS STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($4, $5), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 

@@ -164,13 +164,12 @@ void *queue_at(queue *q, int n) {
   return res ? res->val : NULL;
 }
 
-void queue_print_all_val(queue *q, void (*print_func)(void *)) {
+void queue_print(queue *q, void (*print_func)(void *)) {
   if (q->size == 0) {
-    printf("queue: NULL\n");
+    printf("NULL");
     return;
   }
 
-  printf("queue: ");
   node *current = q->head;
   printf("[");
   for (size_t i = 0; i < q->size - 1; i++) {
@@ -179,5 +178,5 @@ void queue_print_all_val(queue *q, void (*print_func)(void *)) {
     current = current->next;
   }
   print_func(current->val);
-  printf("]\n");
+  printf("]");
 }
