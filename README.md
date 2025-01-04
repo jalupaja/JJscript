@@ -3,8 +3,13 @@
 
 ## "Features"
 
+### environments
+- local environments using `{ ... }`
+- local variables
+- functions using `id = { ... }` or `id = {(ARGS) ... }`
+
 ### datatypes
-- integer (only octal)
+- integer (only octal and hex (using 0x...))
 - float
 - string
 - NONE

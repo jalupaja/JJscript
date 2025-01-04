@@ -107,6 +107,7 @@ EOL ";"
 {PRINT}     { return _print; }
 {INPUT}     { return _input; }
 {NUM}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
+{HEX}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
 {FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
 {BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
