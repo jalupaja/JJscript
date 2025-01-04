@@ -1,16 +1,16 @@
 CC=gcc
-CFLAGS=-O0 -Wall -ggdb
+CFLAGS=-O1 -Wall -ggdb
 LDFLAGS=-lm
 
 LEXER=lexer
 PARSER=parser
 PRJ=prog
 
-$(PRJ): $(PARSER).tab.o $(LEXER).lex.o ast.o string.o queue.o value.o env.o
+$(PRJ): $(PARSER).tab.o $(LEXER).lex.o ast.o string.o queue.o value.o env.o function.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(PARSER).tab.c $(PARSER).tab.h: $(PARSER).y string.o queue.o
-	bison -t --defines --report=all $(PARSER).y
+	bison -t --defines --report=all $(PARSER).y -Wcounterexamples
 
 $(PARSER).tab.o: $(PARSER).tab.c $(PARSER).tab.h
 
@@ -26,6 +26,8 @@ queue.o: queue.c queue.h
 string.o: string.c string.h
 
 value.o: value.c value.h
+
+function.o: function.c function.h
 
 env.o: env.c env.h
 

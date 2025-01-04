@@ -10,25 +10,24 @@
 
 env_t *cur_env = NULL;
 
-void queue_free(queue *q) {
-  // TODO
-}
-
 void env_push() {
   env_t *new_env = (env_t *)malloc(sizeof(env_t));
   new_env->vars = queue_create();
   new_env->parent = cur_env;
   cur_env = new_env;
+  if (DEBUG)
+    printf("env_push: %p\n", new_env);
 }
 
 void env_free(env_t *env) {
-  // TODO free queue, ...
+  queue_free(env->vars);
   free(env);
 }
 
 void env_pop() {
+  if (DEBUG)
+    printf("env_pop\n");
   if (cur_env) {
-    queue_free(cur_env->vars);
     env_t *old_env = cur_env;
     cur_env = cur_env->parent;
     env_free(old_env);
@@ -47,13 +46,21 @@ var_t *queue_search(queue *q, string *id) {
 }
 
 var_t *env_search(string *id) {
+  if (DEBUG)
+    printf("env_search: %s\n", string_get_chars(id));
   env_t *env = cur_env;
   while (env) {
-    var_t *result = (var_t *)queue_search(env->vars, id);
-    if (result != NULL)
-      return result;
+    printf("searching in env: %p\n", env);
+    var_t *res = (var_t *)queue_search(env->vars, id);
+    if (res != NULL) {
+      if (DEBUG)
+        printf("env_search res(%p)\n", res);
+      return res;
+    }
     env = env->parent;
   }
+  if (DEBUG)
+    printf("env_search res()\n");
   return NULL;
 }
 

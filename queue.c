@@ -18,18 +18,13 @@ struct queue {
 };
 
 queue *queue_create() {
+  if (DEBUG)
+    printf("queue_create\n");
   queue *q = (queue *)malloc(sizeof(queue));
   q->head = NULL;
   q->tail = NULL;
   q->size = 0;
   return q;
-}
-
-void queue_destroy(queue *q) {
-  while (q->size > 0) {
-    queue_dequeue(q);
-  }
-  free(q);
 }
 
 void queue_enqueue(queue *q, void *data) {
@@ -49,7 +44,10 @@ void queue_enqueue(queue *q, void *data) {
     q->tail = new_node;
   }
 
+#include "value.h"
   q->size++;
+  printf("Enqueued element '%d'. New size: %zu\n",
+         ((val_t *)new_node->val)->val.intval, q->size);
   if (DEBUG)
     printf("Enqueued element. New size: %zu\n", q->size);
 }
@@ -78,26 +76,36 @@ void *queue_dequeue(queue *q) {
   return data;
 }
 
+void queue_free(queue *q) {
+  while (q->size > 0) {
+    queue_dequeue(q);
+  }
+  free(q);
+}
+
 ssize_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, int n) {
+  if (DEBUG)
+    printf("finding in q(%p) %d of %d\n", q, n, (int)q->size);
+
   if (q->size == 0)
     return NULL;
 
-  node *current;
+  node *cur;
   if (n >= 0) {
-    current = q->head;
+    cur = q->head;
     while (n-- > 0) {
-      current = current->next;
+      cur = cur->next;
     }
   } else {
-    current = q->tail;
+    cur = q->tail;
     n++; // -1 should be last element in list
     while (n++ < 0) {
-      current = current->prev;
+      cur = cur->prev;
     }
   }
-  return current;
+  return cur;
 }
 
 void queue_enqueue_at(queue *q, void *data, int n) {
@@ -106,17 +114,17 @@ void queue_enqueue_at(queue *q, void *data, int n) {
     return;
   }
 
-  node *target = find_item(q, n);
+  node *res = find_item(q, n);
   node *new_node = (node *)malloc(sizeof(node));
   new_node->val = data;
 
-  new_node->prev = target->prev;
-  new_node->next = target;
+  new_node->prev = res->prev;
+  new_node->next = res;
 
-  target->prev->next = new_node;
-  target->prev = new_node;
+  res->prev->next = new_node;
+  res->prev = new_node;
 
-  if (target == q->head) {
+  if (res == q->head) {
     q->head = new_node;
   }
 
@@ -129,23 +137,23 @@ void *queue_dequeue_at(queue *q, int n) {
   if (q->size == 0)
     return NULL;
 
-  node *target = find_item(q, n);
-  if (target == NULL)
+  node *res = find_item(q, n);
+  if (res == NULL)
     return NULL;
 
-  void *data = target->val;
+  void *data = res->val;
 
-  target->prev->next = target->next;
-  target->next->prev = target->prev;
+  res->prev->next = res->next;
+  res->next->prev = res->prev;
 
-  if (target == q->head) {
-    q->head = target->next;
+  if (res == q->head) {
+    q->head = res->next;
   }
-  if (target == q->tail) {
-    q->tail = target->prev;
+  if (res == q->tail) {
+    q->tail = res->prev;
   }
 
-  free(target);
+  free(res);
   q->size--;
 
   if (DEBUG)
@@ -153,9 +161,10 @@ void *queue_dequeue_at(queue *q, int n) {
   return data;
 }
 
+#include "string.h"
 void *queue_at(queue *q, int n) {
-  node *target = find_item(q, n);
-  return target ? target->val : NULL;
+  node *res = find_item(q, n);
+  return res ? res->val : NULL;
 }
 
 void queue_print_all_val(queue *q, void (*print_func)(void *)) {

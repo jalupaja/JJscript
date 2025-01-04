@@ -50,6 +50,7 @@ WHILE "while"
 LE "<="
 GE ">="
 EQ "=="
+DELIMITER [,]
 OP [-+*/<>^]
 ASSIGN "="
 LBRAK "("
@@ -98,29 +99,30 @@ EOL ";"
 <STRING_SINGLE>"\n" { yyterminate(); /* TODO crash if string isn't finished... */ }
 <STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
-{IF}      { return _if; }
-{ELIF}    { return _elif; }
-{ELSE}    { return _else; }
-{WHILE}   { return _while; }
-{PRINT}   { return _print; }
-{INPUT}   { return _input; }
-{NUM}     { int v = (int)strtol(yytext, NULL, 8); yylval.val = create_value(&v, INT_TYPE); return val; /* OCTAL */ }
-{FP}      { float v = atof(yytext); yylval.val = create_value(&v, FLOAT_TYPE); return val; }
-{BOOLEAN} { bool v = strcmp(yytext, "true") == 0; yylval.val = create_value(&v, BOOL_TYPE); return val; }
-{NIL}     { yylval.val = create_value(NULL, NULL_TYPE); return val; }
-{ID}      { yylval.id = string_create(yytext); return id;   }
-{EOL}     { return eol; }
-{LE}      { return _le; }
-{GE}      { return _ge; }
-{EQ}      { return _eq; }
-{OP}      { return yytext[0]; /* single character operation */ }
-{ASSIGN}  { return assign; }
-{LBRAK}   { return lbrak; }
-{RBRAK}   { return rbrak; }
-{LSQARE}  { return lsquare; }
-{RSQARE}  { return rsquare; }
-{LCURLY}  { return lcurly; }
-{RCURLY}  { return rcurly; }
+{DELIMITER} { return delim; }
+{IF}        { return _if; }
+{ELIF}      { return _elif; }
+{ELSE}      { return _else; }
+{WHILE}     { return _while; }
+{PRINT}     { return _print; }
+{INPUT}     { return _input; }
+{NUM}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
+{FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
+{BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
+{NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
+{ID}        { yylval.id = string_create(yytext); return id;   }
+{EOL}       { return eol; }
+{LE}        { return _le; }
+{GE}        { return _ge; }
+{EQ}        { return _eq; }
+{OP}        { return yytext[0]; /* single character operation */ }
+{ASSIGN}    { return assign; }
+{LBRAK}     { return lbrak; }
+{RBRAK}     { return rbrak; }
+{LSQARE}    { return lsquare; }
+{RSQARE}    { return rsquare; }
+{LCURLY}    { return lcurly; }
+{RCURLY}    { return rcurly; }
 
 [ \n\t]
 

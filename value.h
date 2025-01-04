@@ -1,10 +1,12 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+#include "queue.h"
 #include "string.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
+typedef struct fun_t fun_t;
 typedef struct val_t val_t;
 typedef struct var_t var_t;
 typedef struct fun_t fun_t;
@@ -15,7 +17,8 @@ typedef enum {
   BOOL_TYPE,
   NULL_TYPE,
   STRING_TYPE,
-  FUNCTION_TYPE
+  QUEUE_TYPE,
+  FUNCTION_TYPE,
 } val_type_t;
 
 union data_value {
@@ -23,6 +26,8 @@ union data_value {
   double floatval;
   bool boolval;
   string *strval;
+  fun_t *funval;
+  queue *qval;
 };
 
 struct val_t {
@@ -30,6 +35,7 @@ struct val_t {
   val_type_t val_type;
 };
 
+// TODO remove??? / move + rename?
 struct var_t {
   string *id;
   val_t *val;

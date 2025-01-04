@@ -1,5 +1,6 @@
 #include "value.h"
 #include "string.h"
+#include <stdio.h> // TODO rem
 
 void value_free(val_t *val) {
   if (val->val_type == STRING_TYPE) {
@@ -25,6 +26,14 @@ val_t *value_create(void *new_val, val_type_t val_type) {
     break;
   case STRING_TYPE:
     val->val.strval = (string *)new_val;
+    break;
+  case QUEUE_TYPE:
+    printf("got queue: %p\n", new_val);
+    val->val.qval = (queue *)new_val;
+    break;
+  case FUNCTION_TYPE:
+    printf("got fun: %p\n", new_val);
+    val->val.funval = (fun_t *)new_val;
     break;
   default:
     break;

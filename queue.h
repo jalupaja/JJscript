@@ -5,7 +5,7 @@
 typedef struct queue queue;
 
 queue *queue_create();
-void queue_destroy(queue *q);
+void queue_free(queue *q);
 void queue_enqueue(queue *q, void *data);
 void *queue_dequeue(queue *q);
 ssize_t queue_len(queue *q);

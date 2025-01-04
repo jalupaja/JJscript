@@ -6,10 +6,11 @@
 
 #define INITIAL_CAPACITY 16
 
-#define DEBUG 0
+#define DEBUG 1
 
 string *string_create(const char *init) {
   string *str = (string *)malloc(sizeof(string));
+  printf("NEW STRING: %s (%p)\n", init, init);
   if (!str) {
     fprintf(stderr, "Memory allocation failed for string struct\n");
     exit(EXIT_FAILURE);
@@ -139,6 +140,8 @@ int string_cmp_chars(string *str1, const char *str2) {
 }
 
 void string_free(string *str) {
+  if (DEBUG)
+    printf("FREEING: %s(%p)\n", string_get_chars(str), str);
   if (str->data != NULL) {
     free(str->data);
     str->data = NULL;
