@@ -50,7 +50,6 @@ var_t *env_search(string *id) {
     printf("env_search: %s\n", string_get_chars(id));
   env_t *env = cur_env;
   while (env) {
-    printf("searching in env: %p\n", env);
     var_t *res = (var_t *)queue_search(env->vars, id);
     if (res != NULL) {
       if (DEBUG)

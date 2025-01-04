@@ -44,10 +44,7 @@ void queue_enqueue(queue *q, void *data) {
     q->tail = new_node;
   }
 
-#include "value.h"
   q->size++;
-  printf("Enqueued element '%d'. New size: %zu\n",
-         ((val_t *)new_node->val)->val.intval, q->size);
   if (DEBUG)
     printf("Enqueued element. New size: %zu\n", q->size);
 }

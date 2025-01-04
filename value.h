@@ -43,5 +43,7 @@ struct var_t {
 
 val_t *value_create(void *new_val, val_type_t val_type);
 void value_free(val_t *val);
+void value_print(val_t *val);
+int val_true(val_t *val);
 
 #endif // VALUE_H

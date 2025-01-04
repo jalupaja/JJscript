@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 /* TODO
 recursion (environments)
@@ -41,7 +41,6 @@ void yyerror (const char *msg) {
 // TODO what
 int exec = 0;
 #define EXEC if (exec == 0)
-
 
 string *input() {
     string *str = string_create(NULL);
@@ -116,7 +115,7 @@ enum {
 %right '^'
 %%
 
-S: STMTS { opt_ast($1); printf("\n"); print_ast($1); printf("\n"); ex($1); }
+S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); ex($1); }
 
 STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS NON_STMT { $$ = node2(STMTS, $1, $2); }
@@ -134,12 +133,12 @@ NON_STMT: lcurly STMTS rcurly { $$ = node1(lcurly, $2); }
 PARAMS: lbrak PARAM_LIST rbrak { $$ = $2; }
       | %empty { $$ = queue_create(); }
 
-PARAM_LIST: PARAM_LIST delim ID { queue_enqueue($1, $3->id); printf("PARAM %p\n", $3->id); $$ = $1; }
-      | ID { $$ = queue_create(); queue_enqueue($$, $1->id); printf("PARAM: %p: %s\n", $1->id, string_get_chars($1->id)); }
+PARAM_LIST: PARAM_LIST delim ID { queue_enqueue($1, $3->id); $$ = $1; }
+      | ID { $$ = queue_create(); queue_enqueue($$, $1->id); }
       | %empty { $$ = queue_create(); }
 
-ARGS: ARGS delim EXPR { queue_enqueue($1, ex($3)); $$ = $1; }
-      | EXPR { $$ = queue_create(); queue_enqueue($$, ex($1)); }
+ARGS: ARGS delim EXPR { queue_enqueue($1, $3); $$ = $1; }
+      | EXPR { $$ = queue_create(); queue_enqueue($$, $1); }
       | %empty { $$ = queue_create(); }
 
 IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
@@ -165,7 +164,7 @@ EXPR:
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
 FUN_CALL: id lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
-ID:       id  { $$ = node0(id); $$->id = $1; printf("ID: %p: %s\n", $1, string_get_chars($1)); }
+ID:       id  { $$ = node0(id); $$->id = $1; }
 
 %%
 // TODO external file
@@ -402,65 +401,6 @@ val_t *power(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 }
 
-void print_value(val_t *val) {
-    if (!val) {
-        printf("> NULL\n");
-        return;
-    }
-    switch (val->val_type) {
-        case INT_TYPE:
-            // Apparently printf can't print negative numbers
-            if (val->val.intval < 0)
-                printf("> -%o\n", -val->val.intval); // OCTAL
-            else
-                printf("> %o\n", val->val.intval); // OCTAL
-            break;
-        case FLOAT_TYPE:
-            printf("> %f\n", val->val.floatval);
-            break;
-        case STRING_TYPE:
-            printf("> %s\n", string_get_chars(val->val.strval));
-            break;
-        case BOOL_TYPE:
-            printf("> %s\n", val->val.boolval ? "true" : "false");
-            break;
-        case NULL_TYPE:
-            printf("> NULL\n");
-            break;
-        case FUNCTION_TYPE:
-            printf("> FUNCTION\n");
-            break;
-        default:
-            printf("> Unknown type\n");
-            break;
-    }
-}
-
-int val_true(val_t *val) {
-    switch(val->val_type) {
-        case INT_TYPE:
-            return val->val.intval != 0;
-            break;
-        case FLOAT_TYPE:
-            return val->val.floatval != 0.0;
-            break;
-        case BOOL_TYPE:
-            return val->val.boolval;
-            break;
-        case NULL_TYPE:
-            return false;
-            break;
-        case STRING_TYPE:
-            string *str = val->val.strval;
-            return str == NULL || string_char_at(str, 0) == '\0';
-            break;
-        default:
-            printf("Unsupported value type(val_true)");
-            break;
-    }
-    return false;
-}
-
 val_t *ex(ast_t *t) {
     if (!t)
         return value_create(NULL, NULL_TYPE);
@@ -496,9 +436,6 @@ val_t *ex(ast_t *t) {
         }
         case assign_fun: {
             env_save(t->id, t->val);
-            printf("assign_fun_type: %d\n", t->val->val_type);
-            printf("assign_fun: %p\n", t->val->val.funval);
-            // TODO is not assigned??? (not found....)
             return t->val;
         }
         case val:
@@ -551,7 +488,6 @@ val_t *ex(ast_t *t) {
 }
 
 val_t *fun_call(string *id, queue *args) {
-printf("SLKFJLKSDJFLKDSJ: %p\n", args);
   if (DEBUG)
       printf("fun_call (%s) with %ld args\n", string_get_chars(id), queue_len(args));
   // search function
@@ -568,9 +504,6 @@ printf("SLKFJLKSDJFLKDSJ: %p\n", args);
     return value_create(NULL, NULL_TYPE);
   }
 
-    printf("fun_params: %p\n", fun->params);
-    printf("args: %p\n", args);
-
   // start new environment
   env_push();
 
@@ -581,24 +514,7 @@ printf("SLKFJLKSDJFLKDSJ: %p\n", args);
     // return value_create(NULL, NULL_TYPE);
   }
 
-// TODO
-printf("FOR %s\n", string_get_chars(id));
-/*
-printf("ARGS:\n");
-for (int i = 0; i < 2; i++) {
-    val_t *v = (val_t *)queue_at(args, i);
-    printf("->(%d) %d\n", i, v->val.intval);
-}
-*/
-
-printf("PARAMS:\n");
-for (int i = 0; i < 2; i++) {
-    printf("->(%d) %p\n", i, queue_at(fun->params, i));
-    //printf("->(%d) %s\n", i, string_get_chars((string *)queue_at(fun->params, i)));
-}
-
   // save args to env
-  printf("ARGS(%ld):\n", p_len);
   for (ssize_t i = 0; i < p_len; i++) {
     string *p_name = (string *)queue_at(fun->params, i);
     val_t *p_val = (val_t *)queue_at(args, i);
