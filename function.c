@@ -14,7 +14,13 @@ fun_t *function_create(queue *params, ast_t *body) {
 }
 
 void function_free(fun_t *fun) {
+#ifndef NO_FREE
+  if (!fun)
+    return;
   queue_free(fun->params);
   ast_free(fun->body);
   free(fun);
+#else
+  printf("function_free() (DISABLED)\n");
+#endif
 }

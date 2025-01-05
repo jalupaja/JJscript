@@ -1,9 +1,10 @@
 #include "value.h"
 #include "function.h"
 #include "string.h"
-#include <stdio.h> // TODO rem
+#include <stdio.h>
 
 void value_free(val_t *val) {
+#ifndef NO_FREE
   if (!val)
     return;
   switch (val->val_type) {
@@ -21,6 +22,9 @@ void value_free(val_t *val) {
     break;
   }
   free(val);
+#else
+  printf("value_free() (DISABLED)\n");
+#endif
 }
 
 val_t *value_create(void *new_val, val_type_t val_type) {

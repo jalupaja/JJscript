@@ -20,8 +20,14 @@ void env_push() {
 }
 
 void env_free(env_t *env) {
+#ifndef NO_FREE
+  if (!env)
+    return;
   queue_free(env->vars);
   free(env);
+#else
+  printf("env_free() (DISABLED)\n");
+#endif
 }
 
 void env_pop() {

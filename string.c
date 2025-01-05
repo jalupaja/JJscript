@@ -154,12 +154,16 @@ void string_clear(string *str) {
 }
 
 void string_free(string *str) {
+#ifndef NO_FREE
   if (DEBUG)
     printf("FREEING: %s(%p)\n", string_get_chars(str), str);
-  if (str) {
-    if (str->data != NULL) {
-      free(str->data);
-    }
-    free(str);
+  if (!str)
+    return;
+  if (str->data != NULL) {
+    free(str->data);
   }
+  free(str);
+#else
+  printf("string_free() (DISABLED)\n");
+#endif
 }

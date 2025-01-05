@@ -83,10 +83,16 @@ void *queue_dequeue(queue *q) {
 }
 
 void queue_free(queue *q) {
+#ifndef NO_FREE
+  if (!q)
+    return;
   while (q->size > 0) {
     queue_dequeue(q);
   }
   free(q);
+#else
+  printf("queue_free() (DISABLED)\n");
+#endif
 }
 
 queue *queue_copy(queue *q) {

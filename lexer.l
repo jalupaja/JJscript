@@ -12,6 +12,8 @@
 
 string *cur_str = NULL;
 
+#define DEBUG 0
+
 void renew_str() {
     cur_str = string_create(NULL);
 }
@@ -76,8 +78,8 @@ EOL ";"
 <COMMENT>{BLOCK_COMMENT_OUT} { yy_pop_state(); }
 
 {STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); renew_str(); return str_start; }
-<STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <STRING_DOUBLE>"\"\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
+<STRING_DOUBLE>"\"" { if (DEBUG) printf("END_STR: %s\n", string_get_chars(cur_str)); yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
 <STRING_DOUBLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
 <STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
@@ -85,12 +87,12 @@ EOL ";"
 <STRING_DOUBLE>"\\t" { string_append_char(cur_str, '\t'); /* append tab */ }
 <STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
 <STRING_DOUBLE>"\\${" { string_append_chars(cur_str, "${"); }
-<STRING_DOUBLE>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
+<STRING_DOUBLE>"${" { if (DEBUG) printf("EMB_STR: %s\n", string_get_chars(cur_str)); yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
 <STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
 {STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); renew_str(); return str_start; }
-<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <STRING_SINGLE>"''" { string_append_char(cur_str, '\''); /* append ' on '' */ }
+<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
 <STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
 <STRING_SINGLE>"\\${" { string_append_chars(cur_str, "${"); }
