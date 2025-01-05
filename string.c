@@ -44,9 +44,6 @@ string *string_copy(string *str) { return string_create(str->data); }
 ssize_t string_len(string *str) { return str->length; }
 
 void string_append_char(string *str, const char suffix) {
-  if (!str)
-    str = string_create(NULL);
-
   if (str->length + 1 >= str->capacity) {
 
     str->capacity *= 2;
@@ -59,8 +56,6 @@ void string_append_char(string *str, const char suffix) {
 }
 
 void string_append_chars(string *str, const char *suffix) {
-  if (!str)
-    str = string_create(NULL);
   size_t suffix_len = strlen(suffix);
 
   if (str->length + suffix_len >= str->capacity) {
@@ -75,8 +70,6 @@ void string_append_chars(string *str, const char *suffix) {
 }
 
 void string_remove_chars_from_end(string *str, int amount) {
-  if (!str)
-    str = string_create(NULL);
   ssize_t new_len = str->length - amount;
   if (new_len < 0)
     new_len = 0;
@@ -85,11 +78,6 @@ void string_remove_chars_from_end(string *str, int amount) {
 }
 
 void string_append_string(string *str1, string *str2) {
-  if (!str1)
-    str1 = string_create(NULL);
-  if (!str2)
-    str2 = string_create(NULL);
-
   if (str1->length + str2->length >= str1->capacity) {
     while (str1->length + str2->length >= str1->capacity) {
       str1->capacity *= 2;
@@ -102,8 +90,6 @@ void string_append_string(string *str1, string *str2) {
 }
 
 void string_prefix_chars(const char *prefix, string *str) {
-  if (!str)
-    str = string_create(NULL);
   // TODO untested
   size_t prefix_len = strlen(prefix);
   char *old_ptr = NULL;
@@ -123,8 +109,6 @@ void string_prefix_chars(const char *prefix, string *str) {
 }
 
 string *string_substring(string *str, size_t start, size_t end) {
-  if (!str)
-    str = string_create(NULL);
   if (start > end || end > str->length) {
     fprintf(stderr, "Invalid substring range.\n");
     exit(EXIT_FAILURE);
@@ -139,8 +123,6 @@ string *string_substring(string *str, size_t start, size_t end) {
 }
 
 char string_char_at(string *str, size_t index) {
-  if (!str)
-    str = string_create(NULL);
   if (index >= str->length) {
     fprintf(stderr, "Index out of bounds.\n");
     exit(EXIT_FAILURE);
