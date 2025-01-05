@@ -1,11 +1,24 @@
 #include "value.h"
+#include "function.h"
 #include "string.h"
 #include <stdio.h> // TODO rem
 
 void value_free(val_t *val) {
-  if (val->val_type == STRING_TYPE) {
+  if (!val)
+    return;
+  switch (val->val_type) {
+  case STRING_TYPE:
     // free string as it will be overwritten
     string_free(val->val.strval);
+    break;
+  case QUEUE_TYPE:
+    queue_free(val->val.qval);
+    break;
+  case FUNCTION_TYPE:
+    function_free(val->val.funval);
+    break;
+  default:
+    break;
   }
   free(val);
 }

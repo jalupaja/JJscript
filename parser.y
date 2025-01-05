@@ -1,6 +1,5 @@
 %{
 #include "function.h"
-#include "embed.h"
 #include "string.h"
 #include "queue.h"
 #include "value.h"
@@ -406,8 +405,8 @@ void opt_ast(ast_t *t) {
       t->val = test_val;
 
       // TODO create free_a... (id has to be freed too)
-      value_free(t->c[0]->val);
-      value_free(t->c[1]->val);
+      free_ast(t->c[0]);
+      free_ast(t->c[1]);
       t->c[0] = t->c[1] = NULL;
     } else {
       value_free(test_val);

@@ -5,16 +5,21 @@
 
 void ast_free_outer(ast_t *t) {
   string_free(t->id);
+  t->id = NULL;
   value_free(t->val);
+  t->val = NULL;
 }
 
 void ast_free(ast_t *t) {
   if (!t)
     return;
   string_free(t->id);
+  t->id = NULL;
   value_free(t->val);
+  t->val = NULL;
   for (int i = 0; i < MC; i++) {
     ast_free(t->c[i]);
+    t->c[i] = NULL;
   }
 }
 
