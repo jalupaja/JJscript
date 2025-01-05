@@ -572,5 +572,9 @@ void opt_ast(ast_t *t) {
 int main (int argc, char **argv) {
     env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
-	yyparse();
+    if (!yyin) {
+        fprintf(stderr, "File '%s' not found!\n", argv[1]);
+        return 1;
+    }
+    yyparse();
 }
