@@ -197,8 +197,7 @@ val_t *ex(ast_t *t) {
         case STMTS:
             val_t *res = ex(t->c[0]);
 
-            if (res->return_val) {
-                res->return_val = false;
+            if (res && res->return_val) {
                 return res;
             } else {
                 return ex(t->c[1]);
@@ -509,6 +508,7 @@ val_t *fun_call(string *id, queue *args) {
   }
 
   val_t *res = ex(fun->body);
+  res->return_val = false;
 
   env_pop();
 
