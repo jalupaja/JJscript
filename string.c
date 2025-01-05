@@ -8,6 +8,14 @@
 
 #define DEBUG 0
 
+ssize_t calc_index(ssize_t index, size_t length) {
+  if (length == 0)
+    return 0;
+  while (index < 0)
+    index += length;
+  return index % length;
+}
+
 string *string_create(const char *init) {
   string *str = (string *)malloc(sizeof(string));
   if (DEBUG)
@@ -67,6 +75,12 @@ void string_append_chars(string *str, const char *suffix) {
 
   strcat(str->data, suffix);
   str->length += suffix_len;
+}
+
+void string_remove_chars_from_beginning(string *str, int amount) {
+  str->length = str->length - amount;
+  ;
+  memmove(str->data, str->data + amount, str->length);
 }
 
 void string_remove_chars_from_end(string *str, int amount) {
@@ -139,11 +153,31 @@ string *string_substring(string *str, size_t start, size_t end) {
   return sub;
 }
 
-char string_char_at(string *str, size_t index) {
-  if (index >= str->length) {
-    fprintf(stderr, "Index out of bounds.\n");
-    exit(EXIT_FAILURE);
+void string_repeat(string *str, size_t n) {
+  if (n == 0 || str->length == 0) {
+    string_clear(str);
+    return;
+  } else if (n < 0 || n == 1) {
+    return;
   }
+
+  size_t new_length = str->length * n;
+
+  if (new_length >= str->capacity) {
+    while (new_length >= str->capacity) {
+      str->capacity *= 2;
+    }
+    str->data = (char *)realloc(str->data, str->capacity);
+  }
+
+  for (size_t i = 1; i < n; i++) {
+    strncpy(str->data + (i * str->length), str->data, str->length);
+  }
+
+  str->length = new_length;
+  str->data[str->length] = '\0';
+}
+
 char string_char_at(string *str, size_t index) {
   index = calc_index(index, str->length);
   return str->data[index];
@@ -156,12 +190,65 @@ char *string_get_chars(string *str) {
     return NULL;
 }
 
+char *string_get_chars_at(string *str, size_t index) {
+  index = calc_index(index, str->length);
+  return &str->data[index];
+}
+
 int string_cmp(string *str1, string *str2) {
   return strcmp(str1->data, str2->data);
 }
 
 int string_cmp_chars(string *str1, const char *str2) {
   return strcmp(str1->data, str2);
+}
+
+void string_strip(string *str) {
+  size_t start = 0;
+  while (start < str->length &&
+         (str->data[start] == ' ' || str->data[start] == '\t' ||
+          str->data[start] == '\n')) {
+    start++;
+  }
+
+  size_t end = str->length;
+  while (end > start &&
+         (str->data[end - 1] == ' ' || str->data[end - 1] == '\t' ||
+          str->data[end - 1] == '\n')) {
+    end--;
+  }
+
+  size_t new_len = end - start;
+  if (start > 0) {
+    memmove(str->data, str->data + start, new_len);
+  }
+  str->data[new_len] = '\0';
+  str->length = new_len;
+}
+
+string *string_tokenize(string *str, const char *delimiters, size_t *position) {
+  if (*position >= str->length) {
+    return NULL; // No more tokens
+  }
+
+  size_t start = *position;
+  while (start < str->length && strchr(delimiters, str->data[start])) {
+    start++;
+  }
+
+  if (start >= str->length) {
+    *position = str->length;
+    return NULL;
+  }
+
+  size_t end = start;
+  while (end < str->length && !strchr(delimiters, str->data[end])) {
+    end++;
+  }
+
+  string *token = string_substring(str, start, end);
+  *position = end;
+  return token;
 }
 
 void string_clear(string *str) {
