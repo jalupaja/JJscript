@@ -24,9 +24,7 @@ void renew_str() {
 
 %x EMBED
 %x STRING_DOUBLE
-%x MULTI_STRING_DOUBLE
 %x STRING_SINGLE
-%x MULTI_STRING_SINGLE
 %x COMMENT
 
 REVERSE_LINE_COMMENT ^.*\?\?\?
@@ -75,51 +73,26 @@ EOL ";"
 <COMMENT>. { }
 <COMMENT>{BLOCK_COMMENT_OUT} { yy_pop_state(); }
 
-
-
-
-
-{MULTI_STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_DOUBLE); renew_str(); return str_start; }
-<MULTI_STRING_DOUBLE>"\"\"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
-<MULTI_STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
-<MULTI_STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '\"'); /* append " on \" */ }
-<MULTI_STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
-<MULTI_STRING_DOUBLE>"\n" { string_append_char(cur_str, '\n'); }
-<MULTI_STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
-<MULTI_STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
-
-
-
-
-
-
 {STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); renew_str(); return str_start; }
 <STRING_DOUBLE>"\"" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
-<STRING_DOUBLE>"\\\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
+<STRING_DOUBLE>"\"\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
 <STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
-<STRING_DOUBLE>"\\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
+<STRING_DOUBLE>"\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\\t" { string_append_char(cur_str, '\t'); /* append tab */ }
 <STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
-<STRING_DOUBLE>"\n" { /* yyterminate();  TODO crash if string isn't finished??? */ }
-<STRING_DOUBLE>"\\{" { string_append_char(cur_str, '{'); }
-<STRING_DOUBLE>"{" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
+<STRING_DOUBLE>"\\${" { string_append_chars(cur_str, "${"); }
+<STRING_DOUBLE>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
 <STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
-
-
-
-
-
-
-
-{MULTI_STR_SINGLE} { yy_push_state(YYSTATE); BEGIN(MULTI_STRING_SINGLE); renew_str(); }
-<MULTI_STRING_SINGLE>"'''" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
-<MULTI_STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); }
-<MULTI_STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
-
-{STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); renew_str(); }
-<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return val; }
+{STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); renew_str(); return str_start; }
+<STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
 <STRING_SINGLE>"''" { string_append_char(cur_str, '\''); /* append ' on '' */ }
-<STRING_SINGLE>"\n" { yyterminate(); /* TODO crash if string isn't finished... */ }
+<STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
+<STRING_SINGLE>"\\${" { string_append_chars(cur_str, "${"); }
+<STRING_SINGLE>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
 <STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {DELIMITER} { return delim; }
