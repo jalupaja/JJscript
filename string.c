@@ -79,8 +79,8 @@ void string_append_chars(string *str, const char *suffix) {
 
 void string_remove_chars_from_beginning(string *str, int amount) {
   str->length = str->length - amount;
-  ;
   memmove(str->data, str->data + amount, str->length);
+  str->data[str->length] = '\0';
 }
 
 void string_remove_chars_from_end(string *str, int amount) {
