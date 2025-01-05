@@ -120,10 +120,12 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
+    | EXPR { $$ = node1(STMT, $1); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
+        | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
 
 PARAMS: PARAMS delim ID { queue_enqueue($1, $3); $$ = $1; }
       | ID { $$ = queue_create(); queue_enqueue($$, $1); }
@@ -148,7 +150,6 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '>' EXPR { $$ = node2('>', $1, $3); }
     | EXPR '^' EXPR { $$ = node2('^', $1, $3); }
     | lbrak EXPR rbrak  { $$ = $2; }
-    | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
     | VAL
     | FUN_CALL
     | ID_EVAL
@@ -230,6 +231,8 @@ val_t *ex(ast_t *t) {
         case STMTS:
             ex(t->c[0]);
             return ex(t->c[1]);
+        case STMT:
+            return ex(t->c[0]);
         case '+':
             return addition(ex(t->c[0]), ex(t->c[1]));
         case '-':
