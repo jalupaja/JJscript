@@ -6,7 +6,7 @@ LEXER=lexer
 PARSER=parser
 PRJ=prog
 
-$(PRJ): $(PARSER).tab.o $(LEXER).lex.o ast.o string.o queue.o value.o value_calc.o env.o function.o embed.o
+$(PRJ): $(PARSER).tab.o $(LEXER).lex.o ast.o string.o queue.o value.o value_calc.o env.o function.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(PARSER).tab.c $(PARSER).tab.h: $(PARSER).y string.o queue.o
@@ -29,8 +29,6 @@ value.o: value.c value.h
 value_calc.o: value_calc.c value_calc.h
 
 function.o: function.c function.h
-
-embed.o: embed.c embed.h
 
 env.o: env.c env.h
 

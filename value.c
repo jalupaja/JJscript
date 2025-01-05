@@ -33,9 +33,6 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   case FUNCTION_TYPE:
     val->val.funval = (fun_t *)new_val;
     break;
-  case EMBED_TYPE:
-    val->val.embval = (emb_t *)new_val;
-    break;
   default:
     break;
   }
@@ -74,8 +71,6 @@ string *val2string(val_t *val) {
     return queue_to_string(val->val.qval, (string * (*)(void *)) val2string);
   case FUNCTION_TYPE:
     return string_create("FUNCTION");
-  case EMBED_TYPE:
-    return string_create("EMBEDDING (how are you here)?");
   default:
     return string_create("Unknown type");
   }

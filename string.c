@@ -78,6 +78,9 @@ void string_remove_chars_from_end(string *str, int amount) {
 }
 
 void string_append_string(string *str1, string *str2) {
+  if (!str2)
+    return;
+
   if (str1->length + str2->length >= str1->capacity) {
     while (str1->length + str2->length >= str1->capacity) {
       str1->capacity *= 2;
