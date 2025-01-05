@@ -54,6 +54,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
     break;
   }
   val->val_type = val_type;
+  val->return_val = false;
 
   return val;
 }

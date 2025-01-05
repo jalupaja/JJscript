@@ -33,6 +33,7 @@ union data_value {
 struct val_t {
   union data_value val;
   val_type_t val_type;
+  bool return_val;
 };
 
 // TODO remove??? / move + rename?

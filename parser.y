@@ -14,14 +14,6 @@
 
 #define DEBUG 0
 
-/* TODO
-implement strings (variables...)
-
-return?
-make bs
-*/
-
-
 int yydebug=0;
 extern FILE *yyin;
 int yylex (void);
@@ -29,11 +21,6 @@ void yyerror (const char *msg) {
     fprintf(stderr, "Parse error: %s\n", msg);
     exit(EXIT_FAILURE);
 }
-
-
-// TODO what
-int exec = 0;
-#define EXEC if (exec == 0)
 
 string *input() {
     string *str = string_create(NULL);
@@ -93,6 +80,7 @@ enum {
 %define parse.error detailed
 
 %token _if _elif _else _while
+%token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
 %token <val> embed_lcurly
@@ -120,6 +108,7 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
+    | _return EXPR { $$ = node1(_return, $2); }
     | EXPR { $$ = node1(STMT, $1); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
@@ -229,10 +218,19 @@ val_t *ex(ast_t *t) {
 
     switch (t->type) {
         case STMTS:
-            ex(t->c[0]);
-            return ex(t->c[1]);
+            val_t *res = ex(t->c[0]);
+
+            if (res->return_val) {
+                return res;
+            } else {
+                return ex(t->c[1]);
+            }
         case STMT:
             return ex(t->c[0]);
+        case _return:
+            val_t *ret = ex(t->c[0]);
+            ret->return_val = true;
+            return ret;
         case '+':
             return addition(ex(t->c[0]), ex(t->c[1]));
         case '-':

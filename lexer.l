@@ -54,6 +54,7 @@ ELIF "elif"
 IF "if"
 ELSE "else"
 WHILE "while"
+RETURN "return"
 LE "<="
 GE ">="
 EQ "=="
@@ -106,6 +107,7 @@ EOL ";"
 {WHILE}     { return _while; }
 {PRINT}     { return _print; }
 {INPUT}     { return _input; }
+{RETURN}    { return _return; }
 {NUM}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
 {HEX}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
 {FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
