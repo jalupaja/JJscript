@@ -1,5 +1,6 @@
 #include "queue.h"
 #include "string.h"
+#include "value.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,11 +52,19 @@ void queue_enqueue(queue *q, void *data) {
 }
 
 void queue_append(queue *q1, queue *q2) {
+  size_t len = q2->size;
   node *cur = q2->head;
-  while (cur != NULL) {
-    queue_enqueue(q1, cur->val);
+  for (int i = 0; i < len; i++) {
+    queue_enqueue(q1, value_copy(cur->val));
     cur = cur->next;
   }
+}
+
+void queue_repeat(queue *q, int n) {
+  queue *tmp = queue_copy(q);
+  for (int i = 0; i < n; i++)
+    queue_append(q, tmp);
+  queue_free(tmp);
 }
 
 void *queue_dequeue(queue *q) {
@@ -196,6 +205,12 @@ void *queue_dequeue_at(queue *q, int n) {
   if (DEBUG)
     printf("Dequeued at position %d. New size: %zu\n", n, q->size);
   return data;
+}
+
+int queue_cmp(queue *q1, queue *q2) {
+  // TODO implement
+  printf("QUEUE_CMP NOT IMPLEMENTED YET\n");
+  return 0;
 }
 
 void *queue_at(queue *q, int n) {
