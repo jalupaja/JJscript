@@ -106,9 +106,10 @@ void queue_free(queue *q) {
 
 queue *queue_copy(queue *q) {
   queue *new_queue = queue_create();
+  size_t len = q->size;
   node *cur = q->head;
-  while (cur != NULL) {
-    queue_enqueue(new_queue, cur->val);
+  for (int i = 0; i < len; i++) {
+    queue_enqueue(new_queue, value_copy(cur->val));
     cur = cur->next;
   }
   return new_queue;
