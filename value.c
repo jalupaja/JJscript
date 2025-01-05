@@ -75,66 +75,69 @@ val_t *value_create(void *new_val, val_type_t val_type) {
 }
 
 val_t *string2val(string *str) {
-  char *chars = string_get_chars(str);
+  string *check = string_copy(str);
+
+  string_strip(check);
+  char *chars = string_get_chars(check);
+
+  val_t *ret = NULL;
+
   char *end_ptr;
-  // TODO should ignore whitespace?
-
-  long int_val = strtol(chars, &end_ptr, 8); // OCTAL
+  int int_val = (int)strtol(chars, &end_ptr, 8); // OCTAL
   if (*end_ptr == '\0') {
-    return value_create(&int_val, INT_TYPE);
+    printf("INT: %d\n", int_val);
+    ret = value_create(&int_val, INT_TYPE);
   }
 
-  double float_val = strtod(chars, &end_ptr);
-  if (*end_ptr == '\0') {
-    return value_create(&float_val, FLOAT_TYPE);
+  if (!ret) {
+    double float_val = strtod(chars, &end_ptr);
+    if (*end_ptr == '\0') {
+      ret = value_create(&float_val, FLOAT_TYPE);
+    }
   }
 
-  if (strcmp(chars, "true") == 0 || strcmp(chars, "false") == 0) {
+  if (!ret && strcmp(chars, "true") == 0 || strcmp(chars, "false") == 0) {
     bool bool_val = (strcmp(chars, "true") == 0);
-    return value_create(&bool_val, BOOL_TYPE);
+    ret = value_create(&bool_val, BOOL_TYPE);
   }
 
-  if (strcmp(chars, "NONE") == 0) {
-    return value_create(NULL, NULL_TYPE);
+  if (!ret && strcmp(chars, "NONE") == 0) {
+    ret = value_create(NULL, NULL_TYPE);
   }
 
-  size_t len = strlen(chars);
-  // TODO fixup string (ensure all indexes in range)
   // TODO implement queue in queue if I get bored any time soon
-  if (len >= 2 && chars[0] == '[' && chars[len - 1] == ']') {
+  // QUEUE should be last (other then STRING) as it changes the check variable
+  if (!ret && string_char_at(check, 0) == '[' &&
+      string_char_at(check, -1) == ']') {
     queue *q = queue_create();
 
-    // remove start end characters
-    char *tmp = chars + 1;
-    tmp[strlen(tmp) - 1] = '\0';
+    // Create a string instance for manipulation
+    string_remove_chars_from_beginning(check, 1);
+    string_remove_chars_from_end(check, 1);
 
-    char *token = strtok(tmp, ",");
-    while (token != NULL) {
-      printf("loop: %s\n", token);
-      // TODO trim for all, other then string
-      char *trimmed_token = token;
+    size_t position = 0;
+    string *token;
 
-      while (isspace((unsigned char)*trimmed_token))
-        trimmed_token++;
-      // TODO prettify
+    while ((token = string_tokenize(check, ",", &position)) != NULL) {
+      string_strip(token);
 
-      char *end_trim = trimmed_token + strlen(trimmed_token) - 1;
-      while (end_trim > trimmed_token && isspace((unsigned char)*end_trim))
-        end_trim--;
-      *(end_trim + 1) = '\0';
+      val_t *element = string2val(token);
 
-      val_t *element = string2val(string_create(trimmed_token));
-
-      // Append the element to the queue
       queue_enqueue(q, (void *)element);
 
-      token = strtok(NULL, ",");
-      // TODO return
+      string_free(token);
     }
-    return value_create(q, QUEUE_TYPE);
-  } // TODO else {
-  return value_create(string_copy(str), STRING_TYPE);
-  // }
+
+    ret = value_create(q, QUEUE_TYPE);
+  }
+
+  if (!ret) {
+    ret = value_create(string_copy(str), STRING_TYPE);
+  }
+
+  string_free(check);
+
+  return ret;
 }
 
 string *val2string(val_t *val) {
