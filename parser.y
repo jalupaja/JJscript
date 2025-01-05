@@ -185,6 +185,7 @@ val_t *ex(ast_t *t) {
             val_t *res = ex(t->c[0]);
 
             if (res->return_val) {
+                res->return_val = false;
                 return res;
             } else {
                 return ex(t->c[1]);

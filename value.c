@@ -91,7 +91,6 @@ val_t *string2val(string *str) {
   if (!ret) {
     int int_val = (int)strtol(chars, &end_ptr, 8); // OCTAL
     if (*end_ptr == '\0') {
-      printf("INT: %d\n", int_val);
       ret = value_create(&int_val, INT_TYPE);
     }
   }
