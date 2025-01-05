@@ -157,7 +157,7 @@ string *val2string(val_t *val) {
   }
   case FLOAT_TYPE: {
     char buf[64];
-    snprintf(buf, sizeof(buf), "%f", val->val.floatval);
+    snprintf(buf, sizeof(buf), "%.2f", val->val.floatval);
     return string_create(buf);
   }
   case BOOL_TYPE:
