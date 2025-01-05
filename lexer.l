@@ -59,9 +59,16 @@ RETURN "return"
 LE "<="
 GE ">="
 EQ "=="
+AA "++"
+SS "--"
 DELIMITER [,]
-OP [-+*/<>^&|%!]
 ASSIGN "="
+ASSIGN_ADD "+="
+ASSIGN_SUB "-="
+ASSIGN_MUL "*="
+ASSIGN_DIV "/="
+ASSIGN_MOD "%="
+OP [-+*/<>^&|%!]
 LBRAK "("
 RBRAK ")"
 LSQARE "["
@@ -99,31 +106,38 @@ EOL ";"
 
 <STRING_DOUBLE,STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
-{DELIMITER} { return delim; }
-{IF}        { return _if; }
-{ELIF}      { return _elif; }
-{ELSE}      { return _else; }
-{WHILE}     { return _while; }
-{PRINT}     { return _print; }
-{INPUT}     { return _input; }
-{RETURN}    { return _return; }
-{OCTAL}       { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
-{HEX}       { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
-{FP}        { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
-{BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
-{NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
-{EOL}       { return eol; }
-{LE}        { return _le; }
-{GE}        { return _ge; }
-{EQ}        { return _eq; }
-{OP}        { return yytext[0]; /* single character operation */ }
-{ASSIGN}    { return assign; }
-{LBRAK}     { return lbrak; }
-{RBRAK}     { return rbrak; }
-{LSQARE}    { return lsquare; }
-{RSQARE}    { return rsquare; }
-{LCURLY}    { yy_push_state(YYSTATE); BEGIN(INITIAL); return lcurly; }
-{RCURLY}    { yy_pop_state(); renew_str(); /* clear cur_str for embeddings */ return rcurly; }
+{DELIMITER}  { return delim; }
+{IF}         { return _if; }
+{ELIF}       { return _elif; }
+{ELSE}       { return _else; }
+{WHILE}      { return _while; }
+{PRINT}      { return _print; }
+{INPUT}      { return _input; }
+{RETURN}     { return _return; }
+{OCTAL}      { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
+{HEX}        { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
+{FP}         { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
+{BOOLEAN}    { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
+{NIL}        { yylval.val = value_create(NULL, NULL_TYPE); return val; }
+{EOL}        { return eol; }
+{LE}         { return _le; }
+{GE}         { return _ge; }
+{EQ}         { return _eq; }
+{ASSIGN}     { return assign; }
+{ASSIGN_ADD} { return assign_add; }
+{ASSIGN_SUB} { return assign_sub; }
+{ASSIGN_MUL} { return assign_mul; }
+{ASSIGN_DIV} { return assign_div; }
+{ASSIGN_MOD} { return assign_mod; }
+{AA}         { return _aa; }
+{SS}         { return _ss; }
+{OP}         { return yytext[0]; /* single character operation */ }
+{LBRAK}      { return lbrak; }
+{RBRAK}      { return rbrak; }
+{LSQARE}     { return lsquare; }
+{RSQARE}     { return rsquare; }
+{LCURLY}     { yy_push_state(YYSTATE); BEGIN(INITIAL); return lcurly; }
+{RCURLY}     { yy_pop_state(); renew_str(); /* clear cur_str for embeddings */ return rcurly; }
 
 {ID_START} { yy_push_state(YYSTATE); BEGIN(ID); renew_str(); string_append_chars(cur_str, yytext); return id_start; }
 <ID>{ID_PART} { string_append_chars(cur_str, yytext); }

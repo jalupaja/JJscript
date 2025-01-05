@@ -57,10 +57,10 @@ enum {
 %type <ast> VAL FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
 
 %precedence delim
-%left assign
-%left '<' '>' _le _ge _eq
+%left assign assign_add assign_sub assign_mul assign_div assign_mod
+%left '<' '>' _le _ge _eq _eq_a _eq_s _eq_m _eq_d _eq_mod
 %left '&' '|'
-%left '-' '+'
+%left '-' '+' _aa _ss
 %left '*' '/' '%'
 %right '^' '!'
 %%
@@ -73,6 +73,13 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
+    | ID assign_add EXPR { $$ = node2(assign_add, $1, $3); }
+    | ID assign_sub EXPR { $$ = node2(assign_sub, $1, $3); }
+    | ID assign_mul EXPR { $$ = node2(assign_mul, $1, $3); }
+    | ID assign_div EXPR { $$ = node2(assign_div, $1, $3); }
+    | ID assign_mod EXPR { $$ = node2(assign_mod, $1, $3); }
+    | ID _aa { $$ = node1(_aa, $1); }
+    | ID _ss { $$ = node1(_ss, $1); }
     | _return EXPR { $$ = node1(_return, $2); }
     | EXPR { $$ = node1(STMT, $1); }
 
@@ -93,13 +100,13 @@ IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
       | _else lcurly STMTS rcurly { $$ = node1(_else, $3); }
       | %empty { $$ = NULL; }
 
-EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
+EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
+    | EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '+' EXPR { $$ = node2('+', $1, $3); }
     | EXPR '*' EXPR { $$ = node2('*', $1, $3); }
     | EXPR '/' EXPR { $$ = node2('/', $1, $3); }
     | EXPR _le EXPR { $$ = node2(_le, $1, $3); }
     | EXPR _ge EXPR { $$ = node2(_ge, $1, $3); }
-    | EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | EXPR '<' EXPR { $$ = node2('<', $1, $3); }
     | EXPR '>' EXPR { $$ = node2('>', $1, $3); }
     | EXPR '^' EXPR { $$ = node2('^', $1, $3); }
@@ -237,7 +244,120 @@ val_t *ex(ast_t *t) {
             val_t *res = ex(t->c[1]);
             if (DEBUG)
                 printf("assign_id: %s = %s\n", string_get_chars(id), string_get_chars(val2string(res)));
-            // TODO value_free(id_val);
+            env_save(id, res);
+            return res;
+        }
+        case assign_add: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *val = ex(t->c[1]);
+
+            var_t *cur = env_search(id);
+            val_t *res = addition(cur->val, val);
+
+            // TODO? value_free(val);
+
+            if (DEBUG)
+                printf("assign_add: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+            env_save(id, res);
+            return res;
+        }
+        case _aa: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            int one = 1;
+            val_t *val = value_create(&one, INT_TYPE);
+
+            var_t *cur = env_search(id);
+            val_t *res = addition(cur->val, val);
+
+            value_free(val);
+
+            if (DEBUG)
+                printf("assign_++: %s\n", string_get_chars(id));
+            env_save(id, res);
+            return res;
+        }
+        case assign_sub: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *val = ex(t->c[1]);
+
+            var_t *cur = env_search(id);
+            val_t *res = subtraction(cur->val, val);
+
+            // TODO? value_free(val);
+
+            if (DEBUG)
+                printf("assign_sub: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+            env_save(id, res);
+            return res;
+        }
+        case _ss: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            int one = 1;
+            val_t *val = value_create(&one, INT_TYPE);
+
+            var_t *cur = env_search(id);
+            val_t *res = subtraction(cur->val, val);
+
+            value_free(val);
+
+            if (DEBUG)
+                printf("assign_--: %s\n", string_get_chars(id));
+            env_save(id, res);
+            return res;
+        }
+        case assign_mul: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *val = ex(t->c[1]);
+
+            var_t *cur = env_search(id);
+            val_t *res = multiplication(cur->val, val);
+
+            // TODO? value_free(val);
+
+            if (DEBUG)
+                printf("assign_mul: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+            env_save(id, res);
+            return res;
+        }
+        case assign_div: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *val = ex(t->c[1]);
+
+            var_t *cur = env_search(id);
+            val_t *res = division(cur->val, val);
+
+            // TODO? value_free(val);
+
+            if (DEBUG)
+                printf("assign_div: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+            env_save(id, res);
+            return res;
+        }
+        case assign_mod: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *val = ex(t->c[1]);
+
+            var_t *cur = env_search(id);
+            val_t *res = modulo(cur->val, val);
+
+            // TODO? value_free(val);
+
+            if (DEBUG)
+                printf("assign_mod: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
