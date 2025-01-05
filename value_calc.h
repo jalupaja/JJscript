@@ -11,6 +11,16 @@ val_t *multiplication(val_t *a, val_t *b);
 
 val_t *division(val_t *a, val_t *b);
 
+val_t *power(val_t *a, val_t *b);
+
+val_t *modulo(val_t *a, val_t *b);
+
+val_t *AND(val_t *a, val_t *b);
+
+val_t *OR(val_t *a, val_t *b);
+
+val_t *NOT(val_t *a);
+
 val_t *less_than(val_t *a, val_t *b);
 
 val_t *greater_than(val_t *a, val_t *b);
@@ -20,7 +30,5 @@ val_t *less_equal_than(val_t *a, val_t *b);
 val_t *greater_equal_than(val_t *a, val_t *b);
 
 val_t *equal(val_t *a, val_t *b);
-
-val_t *power(val_t *a, val_t *b);
 
 #endif // VALUE_CALC_H
