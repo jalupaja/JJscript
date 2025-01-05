@@ -92,14 +92,16 @@ enum {
 %define parse.error detailed
 
 %token _if _elif _else _while
-%token _str <val> str_start str_end embed_lcurly
-%token _input _inline_expr _print <val> val fun <id> _id
+%token _str str_start <val> str_end
+%token _id id_start <val> id_end <id> _id_eval
+%token <val> embed_lcurly
+%token _input _inline_expr _print <val> val fun
 %token assign_id assign_fun eol delim
 %token _le _ge _eq
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
-%type <queue> PARAMS ARGS EMBED
-%type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE STRING
+%type <queue> PARAMS ARGS EMBED_STR EMBED_ID
+%type <ast> VAL FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
 
 %precedence delim
 %left assign
@@ -116,14 +118,14 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
 STMT: _print EXPR { $$ = node1(_print, $2); }
-    | _id assign EXPR { $$ = node1(assign_id, $3); $$->id = $1; }
+    | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
 
-NON_STMT: _id assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node0(assign_fun), $$->id = $1; $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
+NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node0(assign_fun), $$->id = $1->val->val.strval; $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
-PARAMS: PARAMS delim ID { queue_enqueue($1, $3->id); $$ = $1; }
-      | ID { $$ = queue_create(); queue_enqueue($$, $1->id); }
+PARAMS: PARAMS delim ID_EVAL { queue_enqueue($1, $3->id); $$ = $1; }
+      | ID_EVAL { $$ = queue_create(); queue_enqueue($$, $1->id); }
       | %empty { $$ = queue_create(); }
 
 ARGS: ARGS delim EXPR { queue_enqueue($1, $3); $$ = $1; }
@@ -148,20 +150,20 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
     | VAL
     | FUN_CALL
-    | ID
+    | ID_EVAL
     | STRING
     | _input { $$ = node0(_input); }
 
 STRING: str_start str_end { $$ = node0(val); $$->val = $2; }
-      | str_start EMBED { $$ = node0(_str); $$->val = value_create($2, QUEUE_TYPE); }
+      | str_start EMBED_STR { $$ = node0(_str); $$->val = value_create($2, QUEUE_TYPE); }
 
-EMBED: embed_lcurly EXPR rcurly str_end {
+EMBED_STR: embed_lcurly EXPR rcurly str_end {
            $$ = queue_create();
            queue_enqueue($$, $1->val.strval);
            queue_enqueue($$, $2);
            queue_enqueue($$, $4->val.strval);
        }
-      | embed_lcurly EXPR rcurly EMBED {
+      | embed_lcurly EXPR rcurly EMBED_STR {
            $$ = $4;
            queue_enqueue_at($$, $1->val.strval, 0);
            queue_enqueue_at($$, $2, 1);
@@ -169,11 +171,56 @@ EMBED: embed_lcurly EXPR rcurly str_end {
        };
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
-FUN_CALL: _id lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
-ID:       _id  { $$ = node0(_id); $$->id = $1; }
+FUN_CALL: ID lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1->val->val.strval; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
+ID_EVAL:  ID { $$ = node1(_id_eval, $1); }
+ID:       id_start id_end { $$ = node0(_id); $$->val = $2; }
+        | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); }
+
+EMBED_ID: embed_lcurly EXPR rcurly id_end {
+           $$ = queue_create();
+           queue_enqueue($$, $1->val.strval);
+           queue_enqueue($$, $2);
+           queue_enqueue($$, $4->val.strval);
+       }
+      | embed_lcurly EXPR rcurly EMBED_ID {
+           $$ = $4;
+           queue_enqueue_at($$, $1->val.strval, 0);
+           queue_enqueue_at($$, $2, 1);
+           queue_enqueue_at($$, NULL, 2);
+       };
 
 %%
 // TODO external file
+string *join_embeds(queue *segments) {
+    string *str = string_create(NULL);
+
+    env_push();
+
+    string *prefix;
+    ast_t *emb;
+    val_t *res;
+    string *suffix;
+    while (queue_len(segments) > 0) {
+
+        prefix = (string *)queue_dequeue(segments);
+        emb = (ast_t *)queue_dequeue(segments);
+        suffix = (string *)queue_dequeue(segments);
+
+        res = ex(emb);
+
+        string_append_string(str, prefix);
+        string_append_string(str, val2string(res));
+        string_append_string(str, suffix);
+
+        string_free(prefix);
+        ast_free(emb);
+        string_free(suffix);
+    }
+    queue_free(segments);
+
+    env_pop();
+    return str;
+}
 
 val_t *ex(ast_t *t) {
     if (!t)
@@ -204,8 +251,15 @@ val_t *ex(ast_t *t) {
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
         case assign_id: {
-            val_t *res = ex(t->c[0]);
-            env_save(t->id, res);
+        // TODO fun_assign->id doesn't work anymore -> ex(...)
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *res = ex(t->c[1]);
+            if (DEBUG)
+                printf("assign_id: %s = %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+            // TODO value_free(id_val);
+            env_save(id, res);
             return res;
         }
         case assign_fun: {
@@ -214,34 +268,7 @@ val_t *ex(ast_t *t) {
         }
         case _str: {
             queue *segments = t->val->val.qval;
-            string *str = string_create(NULL);
-
-            env_push();
-
-            string *prefix;
-            ast_t *emb;
-            val_t *res;
-            string *suffix;
-            while (queue_len(segments) > 0) {
-
-                prefix = (string *)queue_dequeue(segments);
-                emb = (ast_t *)queue_dequeue(segments);
-                suffix = (string *)queue_dequeue(segments);
-
-                res = ex(emb);
-
-                string_append_string(str, prefix);
-                string_append_string(str, val2string(res));
-                string_append_string(str, suffix);
-
-                string_free(prefix);
-                ast_free(emb);
-                string_free(suffix);
-            }
-            queue_free(segments);
-
-            env_pop();
-
+            string *str = join_embeds(segments);
             return value_create(str, STRING_TYPE);
         }
         case val:
@@ -275,7 +302,25 @@ val_t *ex(ast_t *t) {
             return result;
         }
         case _id: {
-            var_t *cur = env_search(t->id);
+            string *str;
+
+            if (t->val->val_type == STRING_TYPE) {
+                str = t->val->val.strval;
+            } else if (t->val->val_type == QUEUE_TYPE) {
+                queue *segments = t->val->val.qval;
+                str = join_embeds(segments);
+            } else {
+                printf("ERROR in _id. This can't happen\n");
+            }
+
+            return value_create(str, STRING_TYPE);
+        }
+        case _id_eval: {
+            val_t *id_val = ex(t->c[0]);
+            string *str = id_val->val.strval;
+            var_t *cur = env_search(str);
+
+            value_free(id_val);
             // TODO maybe crash if id is not assigned yet?
             return cur ? cur->val : value_create(NULL, NULL_TYPE);
         }
@@ -405,8 +450,8 @@ void opt_ast(ast_t *t) {
       t->val = test_val;
 
       // TODO create free_a... (id has to be freed too)
-      free_ast(t->c[0]);
-      free_ast(t->c[1]);
+      ast_free(t->c[0]);
+      ast_free(t->c[1]);
       t->c[0] = t->c[1] = NULL;
     } else {
       value_free(test_val);

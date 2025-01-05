@@ -26,6 +26,7 @@ void renew_str() {
 %x STRING_DOUBLE
 %x STRING_SINGLE
 %x COMMENT
+%x ID
 
 REVERSE_LINE_COMMENT ^.*\?\?\?
 LINE_COMMENT \/\/.*
@@ -35,7 +36,8 @@ NUM -?[0-7]+
 FP  -?({NUM}?\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
-ID  [a-z]+
+ID_START [a-zA-Z_\-]
+ID_PART [a-zA-Z_\-0-9]
 HEX_NUM ([1-9a-fA-F][0-9a-fA-F]*|0)
 HEX 0x{HEX_NUM}
 PLUS "+"
@@ -64,7 +66,7 @@ LCURLY "{"
 RCURLY "}"
 EOL ";"
 
-%option noyywrap noinput nounput stack noyy_top_state
+%option noyywrap noinput stack noyy_top_state
 %%
 
 {REVERSE_LINE_COMMENT} { /* REVERSE LINE COMMENT */ }
@@ -107,7 +109,6 @@ EOL ";"
 {FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
 {BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
-{ID}        { yylval.id = string_create(yytext); return _id; }
 {EOL}       { return eol; }
 {LE}        { return _le; }
 {GE}        { return _ge; }
@@ -120,6 +121,11 @@ EOL ";"
 {RSQARE}    { return rsquare; }
 {LCURLY}    { yy_push_state(YYSTATE); BEGIN(INITIAL); return lcurly; }
 {RCURLY}    { yy_pop_state(); renew_str(); /* clear cur_str for embeddings */ return rcurly; }
+
+{ID_START} { yy_push_state(YYSTATE); BEGIN(ID); renew_str(); string_append_chars(cur_str, yytext); return id_start; }
+<ID>{ID_PART} { string_append_chars(cur_str, yytext); }
+<ID>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
+<ID>. { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); unput(*yytext); return id_end; }
 
 [ \n\t]
 
