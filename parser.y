@@ -213,7 +213,6 @@ string *join_embeds(queue *segments) {
         string_append_string(str, suffix);
 
         string_free(prefix);
-        ast_free(emb);
         string_free(suffix);
     }
     queue_free(segments);
