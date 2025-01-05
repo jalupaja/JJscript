@@ -8,7 +8,6 @@
 
 typedef struct fun_t fun_t;
 typedef struct val_t val_t;
-typedef struct var_t var_t;
 typedef struct fun_t fun_t;
 
 typedef enum {
@@ -34,12 +33,6 @@ struct val_t {
   union data_value val;
   val_type_t val_type;
   bool return_val;
-};
-
-// TODO remove??? / move + rename?
-struct var_t {
-  string *id;
-  val_t *val;
 };
 
 val_t *value_create(void *new_val, val_type_t val_type);

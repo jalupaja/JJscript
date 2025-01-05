@@ -252,7 +252,7 @@ val_t *ex(ast_t *t) {
 
             val_t *val = ex(t->c[1]);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = addition(cur->val, val);
 
             // TODO? value_free(val);
@@ -269,7 +269,7 @@ val_t *ex(ast_t *t) {
             int one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = addition(cur->val, val);
 
             value_free(val);
@@ -285,7 +285,7 @@ val_t *ex(ast_t *t) {
 
             val_t *val = ex(t->c[1]);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = subtraction(cur->val, val);
 
             // TODO? value_free(val);
@@ -302,7 +302,7 @@ val_t *ex(ast_t *t) {
             int one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = subtraction(cur->val, val);
 
             value_free(val);
@@ -318,7 +318,7 @@ val_t *ex(ast_t *t) {
 
             val_t *val = ex(t->c[1]);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = multiplication(cur->val, val);
 
             // TODO? value_free(val);
@@ -334,7 +334,7 @@ val_t *ex(ast_t *t) {
 
             val_t *val = ex(t->c[1]);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = division(cur->val, val);
 
             // TODO? value_free(val);
@@ -350,7 +350,7 @@ val_t *ex(ast_t *t) {
 
             val_t *val = ex(t->c[1]);
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             val_t *res = modulo(cur->val, val);
 
             // TODO? value_free(val);
@@ -378,7 +378,7 @@ val_t *ex(ast_t *t) {
             val_t *id_val = ex(t->c[0]);
             string *id = id_val->val.strval;
 
-            var_t *cur = env_search(id);
+            env_var_t *cur = env_search(id);
             if (!cur || cur->val->val_type != FUNCTION_TYPE) {
                 fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(id));
                 return value_create(NULL, NULL_TYPE);
@@ -423,7 +423,7 @@ val_t *ex(ast_t *t) {
         case _id_eval: {
             val_t *id_val = ex(t->c[0]);
             string *str = id_val->val.strval;
-            var_t *cur = env_search(str);
+            env_var_t *cur = env_search(str);
 
             // TODO maybe crash if id is not assigned yet?
             return cur ? cur->val : value_create(NULL, NULL_TYPE);
@@ -474,7 +474,7 @@ val_t *fun_call(string *id, queue *args) {
   if (DEBUG)
       printf("fun_call (%s) with %ld args\n", string_get_chars(id), queue_len(args));
   // search function
-  var_t *var = env_search(id);
+  env_var_t *var = env_search(id);
 
   if (!var || var->val->val_type != FUNCTION_TYPE) {
     // TODO actual error. also below
