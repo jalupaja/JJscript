@@ -77,7 +77,8 @@ val_t *fun_call(string *id, queue *args);
 void opt_ast ( ast_t *t);
 
 enum {
-	STMTS = 10000
+    STMTS = 10000,
+    STMT,
 };
 
 %}
@@ -319,7 +320,6 @@ val_t *ex(ast_t *t) {
             string *str = id_val->val.strval;
             var_t *cur = env_search(str);
 
-            value_free(id_val);
             // TODO maybe crash if id is not assigned yet?
             return cur ? cur->val : value_create(NULL, NULL_TYPE);
         }
