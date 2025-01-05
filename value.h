@@ -44,8 +44,10 @@ struct var_t {
 
 val_t *value_create(void *new_val, val_type_t val_type);
 void value_free(val_t *val);
+val_t *value_read();
 void value_print(val_t *val);
 bool val2bool(val_t *val);
+val_t *string2val(string *str);
 string *val2string(val_t *val);
 
 #endif // VALUE_H

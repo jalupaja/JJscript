@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 
 #define DEBUG 0
@@ -20,42 +19,6 @@ int yylex (void);
 void yyerror (const char *msg) {
     fprintf(stderr, "Parse error: %s\n", msg);
     exit(EXIT_FAILURE);
-}
-
-string *input() {
-    string *str = string_create(NULL);
-
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF) {
-        string_append_char(str, (char)ch);
-    }
-
-    return str;
-}
-
-int input_int() {
-    string *str = input();
-    int ret = (int)strtol(string_get_chars(str), NULL, 8); // OCTAL
-    // int ret = atoi(string_get_chars(str));
-    string_free(str);
-    return ret;
-}
-
-double input_float() {
-    string *str = input();
-    double ret = atof(string_get_chars(str));
-    string_free(str);
-    return ret;
-}
-
-char *input_chars() {
-    string *str = input();
-
-    char *ret = malloc(str->length + 1);
-    strcpy(ret, string_get_chars(str));
-
-    string_free(str);
-    return ret;
 }
 
 typedef struct ast_t ast_t;
@@ -143,6 +106,7 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | FUN_CALL
     | ID_EVAL
     | STRING
+    | _input STRING { $$ = node0(_input); $$->val = $2->val; }
     | _input { $$ = node0(_input); }
 
 STRING: str_start str_end { $$ = node0(val); $$->val = $2; }
@@ -339,8 +303,9 @@ val_t *ex(ast_t *t) {
         }
         case _input: {
             // TODO default is string? or try to make double > int > bool > str
-            int input = input_int();
-            return value_create(&input, INT_TYPE);
+            if (t->val)
+                value_print(t->val);
+            return value_read();
         }
         case _print: {
             val_t *val = ex(t->c[0]);

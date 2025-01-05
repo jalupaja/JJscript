@@ -37,6 +37,10 @@ void ast_free(ast_t *t) {
 ast_t *node0(int type) {
   ast_t *ret = calloc(sizeof *ret, 1);
   ret->type = type;
+  ret->id = NULL;
+  ret->val = NULL;
+  for (int i = 0; i < MC; i++)
+    ret->c[i] = NULL;
 
   return ret;
 }

@@ -1,7 +1,10 @@
 #include "value.h"
 #include "function.h"
 #include "string.h"
+
+#include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 void value_free(val_t *val) {
 #ifndef NO_FREE
@@ -25,6 +28,18 @@ void value_free(val_t *val) {
 #else
   printf("value_free() (DISABLED)\n");
 #endif
+}
+
+val_t *value_read() {
+  string *str = string_create(NULL);
+
+  int ch;
+  while ((ch = getchar()) != '\n' && ch != EOF) {
+    string_append_char(str, (char)ch);
+  }
+  val_t *ret = string2val(str);
+  string_free(str);
+  return ret;
 }
 
 val_t *value_create(void *new_val, val_type_t val_type) {
@@ -59,6 +74,69 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   return val;
 }
 
+val_t *string2val(string *str) {
+  char *chars = string_get_chars(str);
+  char *end_ptr;
+  // TODO should ignore whitespace?
+
+  long int_val = strtol(chars, &end_ptr, 8); // OCTAL
+  if (*end_ptr == '\0') {
+    return value_create(&int_val, INT_TYPE);
+  }
+
+  double float_val = strtod(chars, &end_ptr);
+  if (*end_ptr == '\0') {
+    return value_create(&float_val, FLOAT_TYPE);
+  }
+
+  if (strcmp(chars, "true") == 0 || strcmp(chars, "false") == 0) {
+    bool bool_val = (strcmp(chars, "true") == 0);
+    return value_create(&bool_val, BOOL_TYPE);
+  }
+
+  if (strcmp(chars, "NONE") == 0) {
+    return value_create(NULL, NULL_TYPE);
+  }
+
+  size_t len = strlen(chars);
+  // TODO fixup string (ensure all indexes in range)
+  // TODO implement queue in queue if I get bored any time soon
+  if (len >= 2 && chars[0] == '[' && chars[len - 1] == ']') {
+    queue *q = queue_create();
+
+    // remove start end characters
+    char *tmp = chars + 1;
+    tmp[strlen(tmp) - 1] = '\0';
+
+    char *token = strtok(tmp, ",");
+    while (token != NULL) {
+      printf("loop: %s\n", token);
+      // TODO trim for all, other then string
+      char *trimmed_token = token;
+
+      while (isspace((unsigned char)*trimmed_token))
+        trimmed_token++;
+      // TODO prettify
+
+      char *end_trim = trimmed_token + strlen(trimmed_token) - 1;
+      while (end_trim > trimmed_token && isspace((unsigned char)*end_trim))
+        end_trim--;
+      *(end_trim + 1) = '\0';
+
+      val_t *element = string2val(string_create(trimmed_token));
+
+      // Append the element to the queue
+      queue_enqueue(q, (void *)element);
+
+      token = strtok(NULL, ",");
+      // TODO return
+    }
+    return value_create(q, QUEUE_TYPE);
+  } // TODO else {
+  return value_create(string_copy(str), STRING_TYPE);
+  // }
+}
+
 string *val2string(val_t *val) {
   if (!val) {
     return string_create("NULL");
@@ -82,7 +160,7 @@ string *val2string(val_t *val) {
   case BOOL_TYPE:
     return string_create(val->val.boolval ? "true" : "false");
   case NULL_TYPE:
-    return string_create("NULL");
+    return string_create("NONE");
   case STRING_TYPE:
     return string_copy(val->val.strval);
   case QUEUE_TYPE:
