@@ -34,8 +34,9 @@ REVERSE_LINE_COMMENT ^.*\?\?\?
 LINE_COMMENT \/\/.*
 BLOCK_COMMENT_IN "/\*"
 BLOCK_COMMENT_OUT "\*/"
-NUM -?[0-7]+
-FP  -?({NUM}?\.{NUM}f?|{NUM}f)
+OCTAL -?[0-7]+
+NUM   [0-9]+
+FP  -?({NUM}\.{NUM}f?|{NUM}\.f?|\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
 ID_START [a-zA-Z_\-]
@@ -59,7 +60,7 @@ LE "<="
 GE ">="
 EQ "=="
 DELIMITER [,]
-OP [-+*/<>^]
+OP [-+*/<>^&|%!]
 ASSIGN "="
 LBRAK "("
 RBRAK ")"
@@ -106,9 +107,9 @@ EOL ";"
 {PRINT}     { return _print; }
 {INPUT}     { return _input; }
 {RETURN}    { return _return; }
-{NUM}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
+{OCTAL}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
 {HEX}       { int v = (int)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
-{FP}        { float v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
+{FP}        { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
 {BOOLEAN}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
 {EOL}       { return eol; }
@@ -131,7 +132,7 @@ EOL ";"
 
 [ \n\t]
 
-.   { printf("UNKNOWN: %s\n", yytext); }
+.   { printf("LEXER: UNKNOWN: %s\n", yytext); }
 
 
 %%

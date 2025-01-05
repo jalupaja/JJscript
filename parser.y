@@ -8,6 +8,7 @@
 #include "ast.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -58,9 +59,10 @@ enum {
 %precedence delim
 %left assign
 %left '<' '>' _le _ge _eq
+%left '&' '|'
 %left '-' '+'
-%left '*' '/'
-%right '^'
+%left '*' '/' '%'
+%right '^' '!'
 %%
 
 S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); ex($1); }
@@ -101,6 +103,10 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '<' EXPR { $$ = node2('<', $1, $3); }
     | EXPR '>' EXPR { $$ = node2('>', $1, $3); }
     | EXPR '^' EXPR { $$ = node2('^', $1, $3); }
+    | EXPR '&' EXPR { $$ = node2('&', $1, $3); }
+    | EXPR '|' EXPR { $$ = node2('|', $1, $3); }
+    | EXPR '%' EXPR { $$ = node2('%', $1, $3); }
+    | '!' EXPR { $$ = node1('!', $2); }
     | lbrak EXPR rbrak  { $$ = $2; }
     | VAL
     | FUN_CALL
@@ -216,6 +222,14 @@ val_t *ex(ast_t *t) {
             return equal(ex(t->c[0]), ex(t->c[1]));
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
+        case '%':
+            return modulo(ex(t->c[0]), ex(t->c[1]));
+        case '|':
+            return OR(ex(t->c[0]), ex(t->c[1]));
+        case '&':
+            return AND(ex(t->c[0]), ex(t->c[1]));
+        case '!':
+            return NOT(ex(t->c[0]));
         case assign_id: {
             val_t *id_val = ex(t->c[0]);
             string *id = id_val->val.strval;
