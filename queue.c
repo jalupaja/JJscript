@@ -68,7 +68,7 @@ void queue_repeat(queue *q, int n) {
 }
 
 void *queue_dequeue(queue *q) {
-  if (q->size == 0)
+  if (!q || q->size == 0)
     return NULL;
 
   node *deq_node = q->head;
