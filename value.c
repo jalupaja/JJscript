@@ -6,42 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-void value_free(val_t *val) {
-#ifndef NO_FREE
-  if (!val)
-    return;
-  switch (val->val_type) {
-  case STRING_TYPE:
-    // free string as it will be overwritten
-    string_free(val->val.strval);
-    break;
-  case QUEUE_TYPE:
-    queue_free(val->val.qval);
-    break;
-  case FUNCTION_TYPE:
-    function_free(val->val.funval);
-    break;
-  default:
-    break;
-  }
-  free(val);
-#else
-  printf("value_free() (DISABLED)\n");
-#endif
-}
-
-val_t *value_read() {
-  string *str = string_create(NULL);
-
-  int ch;
-  while ((ch = getchar()) != '\n' && ch != EOF) {
-    string_append_char(str, (char)ch);
-  }
-  val_t *ret = string2val(str);
-  string_free(str);
-  return ret;
-}
-
 val_t *value_create(void *new_val, val_type_t val_type) {
   val_t *val = (val_t *)malloc(sizeof(val_t));
   switch (val_type) {
@@ -72,6 +36,44 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   val->return_val = false;
 
   return val;
+}
+
+val_t *value_read() {
+  string *str = string_create(NULL);
+
+  int ch;
+  while ((ch = getchar()) != '\n' && ch != EOF) {
+    string_append_char(str, (char)ch);
+  }
+  val_t *ret = string2val(str);
+  string_free(str);
+  return ret;
+}
+
+val_t *value_copy(val_t *val) {
+  if (!val)
+    return NULL;
+
+  switch (val->val_type) {
+  case INT_TYPE: {
+    int res = val->val.intval;
+    return value_create(&res, INT_TYPE);
+  }
+  case FLOAT_TYPE: {
+    double res = val->val.floatval;
+    return value_create(&res, FLOAT_TYPE);
+  }
+  case BOOL_TYPE: {
+    bool res = val->val.boolval;
+    return value_create(&res, BOOL_TYPE);
+  }
+  case STRING_TYPE:
+    return value_create(string_copy(val->val.strval), STRING_TYPE);
+  case QUEUE_TYPE:
+    return value_create(queue_copy(val->val.qval), QUEUE_TYPE);
+  default:
+    return value_create(NULL, NULL_TYPE);
+  }
 }
 
 val_t *string2val(string *str) {
@@ -201,13 +203,61 @@ bool val2bool(val_t *val) {
   case NULL_TYPE:
     return false;
     break;
-  case STRING_TYPE:
+  case STRING_TYPE: {
     string *str = val->val.strval;
     return str == NULL || string_char_at(str, 0) == '\0';
-    break;
+  } break;
   default:
     printf("Unsupported value type(val_true)");
     break;
   }
   return false;
+}
+
+int val2int(val_t *val) {
+  if (val->val_type == INT_TYPE)
+    return val->val.intval;
+  else if (val->val_type == FLOAT_TYPE)
+    return (int)val->val.floatval;
+  else if (val->val_type == BOOL_TYPE)
+    return (int)val->val.boolval;
+  else
+    printf("VAL2INT: Unsupported val_type %d\n", val->val_type);
+  return 0;
+}
+
+double val2float(val_t *val) {
+  if (val->val_type == INT_TYPE)
+    return (double)val->val.intval;
+  else if (val->val_type == FLOAT_TYPE)
+    return val->val.floatval;
+  else if (val->val_type == BOOL_TYPE)
+    return (double)val->val.boolval;
+  else
+    printf("VAL2FLOAT: Unsupported val_type %d\n", val->val_type);
+  return 0;
+}
+
+void value_free(val_t *val) {
+#ifndef NO_FREE
+  if (!val)
+    return;
+  switch (val->val_type) {
+  case STRING_TYPE:
+    // free string as it will be overwritten
+    string_free(val->val.strval);
+    break;
+  case QUEUE_TYPE:
+    queue_free(val->val.qval);
+    break;
+  case FUNCTION_TYPE:
+    function_free(val->val.funval);
+    break;
+  default:
+    break;
+  }
+  free(val);
+#else
+  printf("value_free() (DISABLED)\n");
+#endif
 }
