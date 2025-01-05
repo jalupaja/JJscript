@@ -47,14 +47,14 @@ enum {
 %token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
+%token _arr
 %token <val> embed_lcurly
 %token _input _inline_expr _print <val> val fun
 %token assign_id assign_fun eol delim
-%token _le _ge _eq
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS EMBED_STR EMBED_ID
-%type <ast> VAL FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
+%type <ast> VAL LIST FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
 
 %precedence delim
 %left assign assign_add assign_sub assign_mul assign_div assign_mod
@@ -93,8 +93,9 @@ PARAMS: PARAMS delim ID { queue_enqueue($1, $3); $$ = $1; }
       | %empty { $$ = queue_create(); }
 
 ARGS: ARGS delim EXPR { queue_enqueue($1, $3); $$ = $1; }
-      | EXPR { $$ = queue_create(); queue_enqueue($$, $1); }
-      | %empty { $$ = queue_create(); }
+    | ARGS delim { $$ = $1; /* allow trailing commas */ }
+    | EXPR { $$ = queue_create(); queue_enqueue($$, $1); }
+    | %empty { $$ = queue_create(); }
 
 IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
       | _else lcurly STMTS rcurly { $$ = node1(_else, $3); }
@@ -116,11 +117,14 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | '!' EXPR { $$ = node1('!', $2); }
     | lbrak EXPR rbrak  { $$ = $2; }
     | VAL
+    | LIST
     | FUN_CALL
     | ID_EVAL
     | STRING
     | _input STRING { $$ = node0(_input); $$->val = $2->val; }
     | _input { $$ = node0(_input); }
+
+LIST: lsquare ARGS rsquare { $$ = node0(_arr); $$->val = value_create($2, QUEUE_TYPE); }
 
 STRING: str_start str_end { $$ = node0(val); $$->val = $2; }
       | str_start EMBED_STR { $$ = node0(_str); $$->val = value_create($2, QUEUE_TYPE); }
@@ -374,6 +378,23 @@ val_t *ex(ast_t *t) {
         }
         case val:
             return t->val;
+        case _arr: {
+            queue *old_elems = t->val->val.qval;
+            queue *new_elems = queue_create();
+
+            size_t q_len = queue_len(old_elems);
+            for (size_t i = 0; i < q_len; i++) {
+                val_t *new_val = ex((ast_t *)queue_at(old_elems, i));
+                queue_enqueue(new_elems, new_val);
+            }
+
+            val_t *ret = value_create(new_elems, QUEUE_TYPE);
+            if (DEBUG) {
+                // TODO TEST
+                printf("LIST ELEMENTS: %s\n", string_get_chars(val2string(ret)));
+            }
+            return ret;
+        }
         case fun: {
             val_t *id_val = ex(t->c[0]);
             string *id = id_val->val.strval;
