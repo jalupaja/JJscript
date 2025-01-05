@@ -82,13 +82,11 @@ val_t *addition(val_t *a, val_t *b) {
     return value_create(new, QUEUE_TYPE);
   } else if (b->val_type == STRING_TYPE) {
     string *new = val2string(a);
-    printf("STR: %s\n", string_get_chars(new));
     string_append_string(new, b->val.strval);
     return value_create(new, STRING_TYPE);
   } else if (a->val_type == STRING_TYPE) {
     string *new = string_copy(a->val.strval);
     string *append = val2string(b);
-    printf("STR2: %s\n", string_get_chars(append));
     string_append_string(new, append);
     string_free(append);
     return value_create(new, STRING_TYPE);
