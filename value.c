@@ -82,11 +82,18 @@ val_t *string2val(string *str) {
 
   val_t *ret = NULL;
 
+  if (chars[0] == '\0') {
+    ret = value_create(string_create(NULL), STRING_TYPE);
+  }
+
   char *end_ptr;
-  int int_val = (int)strtol(chars, &end_ptr, 8); // OCTAL
-  if (*end_ptr == '\0') {
-    printf("INT: %d\n", int_val);
-    ret = value_create(&int_val, INT_TYPE);
+
+  if (!ret) {
+    int int_val = (int)strtol(chars, &end_ptr, 8); // OCTAL
+    if (*end_ptr == '\0') {
+      printf("INT: %d\n", int_val);
+      ret = value_create(&int_val, INT_TYPE);
+    }
   }
 
   if (!ret) {
