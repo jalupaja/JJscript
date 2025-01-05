@@ -21,6 +21,7 @@ char string_char_at(string *str, size_t index);
 char *string_get_chars(string *str);
 int string_cmp(string *str1, string *str2);
 int string_cmp_chars(string *str1, const char *str2);
+void string_clear(string *str);
 void string_free(string *str);
 
 #endif // STRING_H

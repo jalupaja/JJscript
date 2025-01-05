@@ -163,6 +163,11 @@ int string_cmp_chars(string *str1, const char *str2) {
   return strcmp(str1->data, str2);
 }
 
+void string_clear(string *str) {
+  str->data[0] = '\0';
+  str->length = 0;
+}
+
 void string_free(string *str) {
   if (DEBUG)
     printf("FREEING: %s(%p)\n", string_get_chars(str), str);

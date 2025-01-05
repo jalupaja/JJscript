@@ -107,7 +107,7 @@ enum {
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS
-%type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE STRING EMBEDS
+%type <ast> VAL FUN_CALL ID STMTS STMT NON_STMT EXPR IFELSE STRING
 
 %precedence delim
 %left assign
@@ -160,17 +160,16 @@ EXPR: EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | STRING
     | _input { $$ = node0(_input); }
 
-STRING: str_start EMBEDS str_end { $$ = node0(_str);
-      // TODO need beginning string here
-              string *str = string_copy($3->val.strval);
-              $$->val = value_create(embed_create($2, str, STRING_TYPE), EMBED_TYPE);
+STRING: str_start str_end { $$ = node0(val); $$->val = $2; }
+     |  str_start embed_lcurly EXPR rcurly str_end { $$ = node0(_str);
+              string *str_start = string_copy($2->val.strval);
+              string *str_end = string_copy($5->val.strval);
+              emb_t *emb = embed_create(str_start, $3, str_end, STRING_TYPE);
+              $$->val = value_create(emb, EMBED_TYPE);
                         // ast_free($1); // TODO
                         // ast_free($3); // TODO
                         // TODO allow more then one EMBED
               }
-
-EMBEDS: embed_lcurly EXPR rcurly { $$ = $2; }
-      | %empty { $$ = NULL; }
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
 FUN_CALL: _id lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
@@ -222,20 +221,25 @@ val_t *ex(ast_t *t) {
             emb_t *emb = t->val->val.embval;
 
             if (emb->embeds) {
+                string *str = string_copy(emb->str_start);
                 env_push();
 
                 val_t *suffix = ex(emb->embeds);
-                value_print(suffix);
-                string *str = val2string(suffix);
+                string *embed = val2string(suffix);
+                string_append_string(str, embed);
 
                 env_pop();
                 value_free(suffix);
+                string_free(embed);
 
                 string_append_string(str, emb->str_end);
                 // embed_free(emb); // TODO
                 return value_create(str, STRING_TYPE);
             } else {
-                return value_create(emb->str_end, STRING_TYPE);
+                string *str = string_copy(emb->str_start);
+                string_append_string(str, emb->str_end);
+                embed_free(emb);
+                return value_create(str, STRING_TYPE);
             }
         }
         case val:

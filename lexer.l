@@ -97,7 +97,7 @@ EOL ";"
 <STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
 <STRING_DOUBLE>"\n" { yyterminate(); /* TODO crash if string isn't finished??? */ }
 <STRING_DOUBLE>"\\{" { string_append_char(cur_str, '{'); }
-<STRING_DOUBLE>"{" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
+<STRING_DOUBLE>"{" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); string_clear(cur_str); return embed_lcurly; }
 <STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
 
@@ -142,7 +142,7 @@ EOL ";"
 {LSQARE}    { return lsquare; }
 {RSQARE}    { return rsquare; }
 {LCURLY}    { yy_push_state(YYSTATE); BEGIN(INITIAL); return lcurly; }
-{RCURLY}    { yy_pop_state(); cur_str = NULL; /* the current string should already be saved */  return rcurly; }
+{RCURLY}    { yy_pop_state(); return rcurly; }
 
 [ \n\t]
 
