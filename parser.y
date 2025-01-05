@@ -121,12 +121,12 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
 STMT: _print EXPR { $$ = node1(_print, $2); }
     | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
 
-NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node0(assign_fun), $$->id = $1->val->val.strval; $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
+NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
 
-PARAMS: PARAMS delim ID_EVAL { queue_enqueue($1, $3->id); $$ = $1; }
-      | ID_EVAL { $$ = queue_create(); queue_enqueue($$, $1->id); }
+PARAMS: PARAMS delim ID { queue_enqueue($1, $3); $$ = $1; }
+      | ID { $$ = queue_create(); queue_enqueue($$, $1); }
       | %empty { $$ = queue_create(); }
 
 ARGS: ARGS delim EXPR { queue_enqueue($1, $3); $$ = $1; }
@@ -172,7 +172,7 @@ EMBED_STR: embed_lcurly EXPR rcurly str_end {
        };
 
 VAL:      val { $$ = node0(val); $$->val = $1; }
-FUN_CALL: ID lbrak ARGS rbrak { $$ = node0(fun); $$->id = $1->val->val.strval; $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
+FUN_CALL: ID lbrak ARGS rbrak { $$ = node1(fun, $1); $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
 ID_EVAL:  ID { $$ = node1(_id_eval, $1); }
 ID:       id_start id_end { $$ = node0(_id); $$->val = $2; }
         | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); }
@@ -251,7 +251,6 @@ val_t *ex(ast_t *t) {
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
         case assign_id: {
-        // TODO fun_assign->id doesn't work anymore -> ex(...)
             val_t *id_val = ex(t->c[0]);
             string *id = id_val->val.strval;
 
@@ -263,7 +262,10 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_fun: {
-            env_save(t->id, t->val);
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            env_save(id, t->val);
             return t->val;
         }
         case _str: {
@@ -274,9 +276,12 @@ val_t *ex(ast_t *t) {
         case val:
             return t->val;
         case fun: {
-            var_t *cur = env_search(t->id);
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            var_t *cur = env_search(id);
             if (!cur || cur->val->val_type != FUNCTION_TYPE) {
-                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(t->id));
+                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(id));
                 return value_create(NULL, NULL_TYPE);
             }
 
@@ -295,7 +300,7 @@ val_t *ex(ast_t *t) {
                 printf("\n");
             }
 
-            val_t *result = fun_call(t->id, new_args);
+            val_t *result = fun_call(id, new_args);
 
             queue_free(new_args);
 
@@ -390,9 +395,13 @@ val_t *fun_call(string *id, queue *args) {
   }
 
   // save args to env
+  val_t *p_name_val;
+  string *p_name;
+  val_t *p_val;
   for (ssize_t i = 0; i < p_len; i++) {
-    string *p_name = (string *)queue_at(fun->params, i);
-    val_t *p_val = (val_t *)queue_at(args, i);
+    p_name_val = ex(queue_at(fun->params, i));
+    p_name = p_name_val->val.strval;
+    p_val = (val_t *)queue_at(args, i);
     if (DEBUG)
         printf("\t%s\n", string_get_chars(p_name)); /* not actually a function pointer */
     env_save(p_name, p_val);
