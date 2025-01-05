@@ -104,7 +104,7 @@ val_t *string2val(string *str) {
     }
   }
 
-  if (!ret && strcmp(chars, "true") == 0 || strcmp(chars, "false") == 0) {
+  if (!ret && (strcmp(chars, "true") == 0 || strcmp(chars, "false") == 0)) {
     bool bool_val = (strcmp(chars, "true") == 0);
     ret = value_create(&bool_val, BOOL_TYPE);
   }

@@ -164,9 +164,7 @@ void string_repeat(string *str, size_t n) {
   size_t new_length = str->length * n;
 
   if (new_length >= str->capacity) {
-    while (new_length >= str->capacity) {
-      str->capacity *= 2;
-    }
+    str->capacity = (n * str->length) + 1;
     str->data = (char *)realloc(str->data, str->capacity);
   }
 
