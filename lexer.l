@@ -81,24 +81,22 @@ EOL ";"
 {STR_DOUBLE} { yy_push_state(YYSTATE); BEGIN(STRING_DOUBLE); renew_str(); return str_start; }
 <STRING_DOUBLE>"\"\"" { string_append_char(cur_str, '"'); /* append " on \" */ }
 <STRING_DOUBLE>"\"" { if (DEBUG) printf("END_STR: %s\n", string_get_chars(cur_str)); yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
-<STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
-<STRING_DOUBLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
-<STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
-<STRING_DOUBLE>"\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
-<STRING_DOUBLE>"\\t" { string_append_char(cur_str, '\t'); /* append tab */ }
-<STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
-<STRING_DOUBLE>"\\${" { string_append_chars(cur_str, "${"); }
-<STRING_DOUBLE>"${" { if (DEBUG) printf("EMB_STR: %s\n", string_get_chars(cur_str)); yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
-<STRING_DOUBLE>. { string_append_chars(cur_str, yytext); }
 
 {STR_SINGLE} { /* string with single quotes */ yy_push_state(YYSTATE); BEGIN(STRING_SINGLE); renew_str(); return str_start; }
 <STRING_SINGLE>"''" { string_append_char(cur_str, '\''); /* append ' on '' */ }
 <STRING_SINGLE>"'" { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); return str_end; }
-<STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
-<STRING_DOUBLE>"\t" { string_append_char(cur_str, '\n'); /* append tab */ }
-<STRING_SINGLE>"\\${" { string_append_chars(cur_str, "${"); }
-<STRING_SINGLE>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
-<STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
+
+<STRING_DOUBLE,STRING_SINGLE>"\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE,STRING_SINGLE>"\t" { string_append_char(cur_str, '\t'); /* append tab */ }
+<STRING_DOUBLE,STRING_SINGLE>"\\${" { string_append_chars(cur_str, "${"); }
+<STRING_DOUBLE,STRING_SINGLE>"${" { if (DEBUG) printf("EMB_STR: %s\n", string_get_chars(cur_str)); yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
+
+<STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
+<STRING_DOUBLE>"\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
+<STRING_DOUBLE>"\\t" { string_append_char(cur_str, '\t'); /* append tab */ }
+<STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
+
+<STRING_DOUBLE,STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {DELIMITER} { return delim; }
 {IF}        { return _if; }

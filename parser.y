@@ -317,6 +317,7 @@ val_t *ex(ast_t *t) {
                 str = join_embeds(segments);
             } else {
                 printf("ERROR in _id. This can't happen\n");
+                return value_create(NULL, NULL_TYPE);
             }
 
             return value_create(str, STRING_TYPE);
