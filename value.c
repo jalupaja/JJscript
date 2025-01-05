@@ -10,7 +10,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   val_t *val = (val_t *)malloc(sizeof(val_t));
   switch (val_type) {
   case INT_TYPE:
-    val->val.intval = *(int *)new_val;
+    val->val.intval = *(long *)new_val;
     break;
   case FLOAT_TYPE:
     val->val.floatval = *(double *)new_val;
@@ -41,7 +41,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
 val_t *value_read() {
   string *str = string_create(NULL);
 
-  int ch;
+  char ch;
   while ((ch = getchar()) != '\n' && ch != EOF) {
     string_append_char(str, (char)ch);
   }
@@ -56,7 +56,7 @@ val_t *value_copy(val_t *val) {
 
   switch (val->val_type) {
   case INT_TYPE: {
-    int res = val->val.intval;
+    long res = val->val.intval;
     return value_create(&res, INT_TYPE);
   }
   case FLOAT_TYPE: {
@@ -91,7 +91,7 @@ val_t *string2val(string *str) {
   char *end_ptr;
 
   if (!ret) {
-    int int_val = (int)strtol(chars, &end_ptr, 8); // OCTAL
+    long int_val = strtol(chars, &end_ptr, 8); // OCTAL
     if (*end_ptr == '\0') {
       ret = value_create(&int_val, INT_TYPE);
     }
@@ -158,9 +158,9 @@ string *val2string(val_t *val) {
     char buf[32];
     // Apparently printf can't print negative numbers
     if (val->val.intval < 0)
-      snprintf(buf, sizeof(buf), "-%o", -val->val.intval); // OCTAL
+      snprintf(buf, sizeof(buf), "-%o", -(int)val->val.intval); // OCTAL
     else
-      snprintf(buf, sizeof(buf), "%o", val->val.intval); // OCTAL
+      snprintf(buf, sizeof(buf), "%o", (int)val->val.intval); // OCTAL
     return string_create(buf);
   }
   case FLOAT_TYPE: {
@@ -214,13 +214,13 @@ bool val2bool(val_t *val) {
   return false;
 }
 
-int val2int(val_t *val) {
+long val2int(val_t *val) {
   if (val->val_type == INT_TYPE)
     return val->val.intval;
   else if (val->val_type == FLOAT_TYPE)
-    return (int)val->val.floatval;
+    return (long)val->val.floatval;
   else if (val->val_type == BOOL_TYPE)
-    return (int)val->val.boolval;
+    return (long)val->val.boolval;
   else
     printf("VAL2INT: Unsupported val_type %d\n", val->val_type);
   return 0;

@@ -108,7 +108,7 @@ val_t *addition(val_t *a, val_t *b) {
       double res = val2float(a) + val2float(b);
       return value_create(&res, FLOAT_TYPE);
     } else {
-      int res = val2int(a) + val2int(b);
+      long res = val2int(a) + val2int(b);
       return value_create(&res, INT_TYPE);
     }
   }
@@ -172,7 +172,7 @@ val_t *subtraction(val_t *a, val_t *b) {
       double res = val2float(a) - val2float(b);
       return value_create(&res, FLOAT_TYPE);
     } else {
-      int res = val2int(a) - val2int(b);
+      long res = val2int(a) - val2int(b);
       return value_create(&res, INT_TYPE);
     }
   }
@@ -226,7 +226,7 @@ val_t *multiplication(val_t *a, val_t *b) {
       double res = val2float(a) * val2float(b);
       return value_create(&res, FLOAT_TYPE);
     } else {
-      int res = val2int(a) * val2int(b);
+      long res = val2int(a) * val2int(b);
       return value_create(&res, INT_TYPE);
     }
   }
@@ -309,7 +309,7 @@ val_t *power(val_t *a, val_t *b) {
       double res = pow(val2float(a), val2float(b));
       return value_create(&res, FLOAT_TYPE);
     } else {
-      int res = (int)pow(val2int(a), val2int(b));
+      long res = (long)pow(val2int(a), val2int(b));
       return value_create(&res, INT_TYPE);
     }
   }
@@ -351,7 +351,7 @@ val_t *modulo(val_t *a, val_t *b) {
       double res = (double)(val2int(a) % val2int(b));
       return value_create(&res, FLOAT_TYPE);
     } else {
-      int res = val2int(a) % val2int(b);
+      long res = val2int(a) % val2int(b);
       return value_create(&res, INT_TYPE);
     }
   }

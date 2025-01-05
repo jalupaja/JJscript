@@ -118,7 +118,7 @@ ssize_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, int n) {
   if (DEBUG)
-    printf("finding in q(%p) %d of %d\n", q, n, (int)q->size);
+    printf("finding in q(%p) %d of %ld\n", q, n, q->size);
 
   if (q->size == 0)
     return NULL;

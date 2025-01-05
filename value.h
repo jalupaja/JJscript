@@ -22,7 +22,7 @@ typedef enum {
 } val_type_t;
 
 union data_value {
-  int intval;
+  long intval;
   double floatval;
   bool boolval;
   string *strval;
@@ -48,7 +48,7 @@ val_t *value_copy(val_t *val);
 void value_print(val_t *val);
 
 bool val2bool(val_t *val);
-int val2int(val_t *val);
+long val2int(val_t *val);
 double val2float(val_t *val);
 val_t *string2val(string *str);
 string *val2string(val_t *val);

@@ -317,7 +317,6 @@ val_t *ex(ast_t *t) {
             return NULL;
         }
         case _input: {
-            // TODO default is string? or try to make double > int > bool > str
             if (t->val)
                 value_print(t->val);
             return value_read();
