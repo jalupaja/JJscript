@@ -112,16 +112,30 @@ void string_prefix_chars(const char *prefix, string *str) {
 }
 
 string *string_substring(string *str, size_t start, size_t end) {
-  if (start > end || end > str->length) {
-    fprintf(stderr, "Invalid substring range.\n");
-    exit(EXIT_FAILURE);
+  start = calc_index(start, str->length);
+  end = calc_index(end, str->length);
+
+  size_t sub_length;
+
+  if (start == end) {
+    sub_length = str->length; // Wraparound: full string
+  } else if (start < end) {
+    sub_length = end - start;
+  } else {
+    sub_length = str->length - start + end;
   }
+
   string *sub = (string *)malloc(sizeof(string));
-  sub->length = end - start;
+  sub->length = sub_length;
   sub->capacity = sub->length + 1;
   sub->data = (char *)malloc(sub->capacity);
-  strncpy(sub->data, str->data + start, sub->length);
+
+  size_t pos = 0;
+  for (size_t i = 0; i < sub_length; i++) {
+    sub->data[pos++] = str->data[calc_index(start + i, str->length)];
+  }
   sub->data[sub->length] = '\0';
+
   return sub;
 }
 
@@ -130,6 +144,8 @@ char string_char_at(string *str, size_t index) {
     fprintf(stderr, "Index out of bounds.\n");
     exit(EXIT_FAILURE);
   }
+char string_char_at(string *str, size_t index) {
+  index = calc_index(index, str->length);
   return str->data[index];
 }
 
