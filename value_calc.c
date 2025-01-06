@@ -359,12 +359,14 @@ val_t *modulo(val_t *a, val_t *b) {
   return value_create(NULL, NULL_TYPE);
 }
 
-// TODO lexer, parser...
 val_t *AND(val_t *a, val_t *b) {
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
   bool res = val2bool(a) && val2bool(b);
+  if (DEBUG)
+    printf("CMP: %s & %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -373,6 +375,9 @@ val_t *OR(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = val2bool(a) || val2bool(b);
+  if (DEBUG)
+    printf("CMP: %s | %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -381,6 +386,8 @@ val_t *NOT(val_t *a) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = !val2bool(a);
+  if (DEBUG)
+    printf("CMP: !%s -> %d\n", string_get_chars(val2string(a)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -389,6 +396,9 @@ val_t *less_than(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) < 0;
+  if (DEBUG)
+    printf("CMP: %s < %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -397,6 +407,9 @@ val_t *greater_than(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) > 0;
+  if (DEBUG)
+    printf("CMP: %s > %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -405,6 +418,9 @@ val_t *less_equal_than(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) <= 0;
+  if (DEBUG)
+    printf("CMP: %s <= %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -413,6 +429,9 @@ val_t *greater_equal_than(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) >= 0;
+  if (DEBUG)
+    printf("CMP: %s >= %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
 
@@ -421,5 +440,8 @@ val_t *equal(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) == 0;
+  if (DEBUG)
+    printf("CMP: %s == %s -> %d\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
 }
