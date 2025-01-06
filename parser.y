@@ -51,19 +51,25 @@ enum {
 %token <val> embed_lcurly
 %token _input _inline_expr _print _printl <val> val fun
 %token assign_id assign_fun eol delim
-%token lbrak rbrak lsquare rsquare lcurly rcurly
+%token lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS EMBED_STR EMBED_ID
 %type <ast> VAL LIST FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
 
-%left delim
-%left assign assign_add assign_sub assign_mul assign_div assign_mod
-%left '<' '>' _le _ge _eq _eq_a _eq_s _eq_m _eq_d _eq_mod
-%left '&' '|' colon double_colon
-%left '-' '+' _aa _ss
+%precedence delim
+%right assign assign_add assign_sub assign_mul assign_div assign_mod
+%left '|'
+%left '&'
+%left '!'
+%left '<' '>' _le _ge _eq
+%left colon double_colon _in
+%left '-' '+'
 %left '*' '/' '%'
-%right '^' '!'
+%right '^'
+%left _aa _ss
 %left _len _split _random
+%left rbrak
+%right lbrak
 
 %%
 
