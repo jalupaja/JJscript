@@ -521,8 +521,13 @@ val_t *ex(ast_t *t) {
             string *str = id_val->val.strval;
             env_var_t *cur = env_search(str);
 
-            // TODO maybe crash if id is not assigned yet?
-            return cur ? cur->val : value_create(NULL, NULL_TYPE);
+            if (cur) {
+                return cur->val;
+            } else {
+                // TODO maybe crash if id is not assigned yet?
+                fprintf(stderr, "ID '%s' not found!\n", string_get_chars(str));
+                return value_create(NULL, NULL_TYPE);
+            }
         }
         case lcurly: {
             // local environment
