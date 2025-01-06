@@ -131,8 +131,8 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | FUN_CALL
     | ID_EVAL
     | STRING
-    | _input lbrak STRING rbrak { $$ = node0(_input); $$->val = $3->val; }
-    | _input lbrak rbrak { $$ = node0(_input); }
+    | _input lbrak STRING rbrak { $$ = node1(_input, $3); }
+    | _input lbrak rbrak { $$ = node1(_input, NULL); }
     | _len lbrak EXPR rbrak { $$ = node1(_len, $3); }
     | _split lbrak EXPR delim EXPR delim rbrak { $$ = node2(_split, $3, $5); /* range with trailing comma */ }
     | _split lbrak EXPR delim EXPR rbrak { $$ = node2(_split, $3, $5); /* range */ }
@@ -542,8 +542,9 @@ val_t *ex(ast_t *t) {
             return NULL;
         }
         case _input: {
-            if (t->val)
-                value_print(t->val);
+            if (t->c[0]) {
+                value_print(ex(t->c[0]));
+            }
             return value_read();
         }
         case _print: {
