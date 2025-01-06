@@ -226,8 +226,6 @@ string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
     return string_create("NULL");
   }
 
-  node *current = q->head;
-
   string *str = string_create("[");
   string *tmp_str;
 

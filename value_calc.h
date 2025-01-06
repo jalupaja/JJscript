@@ -1,6 +1,8 @@
 #ifndef VALUE_CALC_H
 #define VALUE_CALC_H
 
+#include <stdbool.h>
+
 typedef struct val_t val_t;
 
 val_t *addition(val_t *a, val_t *b);
@@ -28,6 +30,8 @@ val_t *greater_than(val_t *a, val_t *b);
 val_t *less_equal_than(val_t *a, val_t *b);
 
 val_t *greater_equal_than(val_t *a, val_t *b);
+
+bool value_in(val_t *a, val_t *b);
 
 val_t *equal(val_t *a, val_t *b);
 

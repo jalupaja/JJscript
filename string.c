@@ -53,6 +53,10 @@ string *string_copy(string *str) { return string_create(str->data); }
 
 size_t string_len(string *str) { return str->length; }
 
+bool string_in(string *str1, string *str2) {
+  return strstr(str2->data, str1->data) != NULL;
+}
+
 queue *string_split(string *str, string *delim) {
   if (!str || !delim)
     return queue_create();

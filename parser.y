@@ -62,7 +62,8 @@ enum {
 %left '&'
 %left '!'
 %left '<' '>' _le _ge _eq
-%left colon double_colon _in
+%left _in
+%left colon double_colon
 %left '-' '+'
 %left '*' '/' '%'
 %right '^'
@@ -128,6 +129,7 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | EXPR '&' EXPR { $$ = node2('&', $1, $3); }
     | EXPR '|' EXPR { $$ = node2('|', $1, $3); }
     | EXPR '%' EXPR { $$ = node2('%', $1, $3); }
+    | EXPR _in EXPR { $$ = node2(_in, $1, $3); }
     | EXPR colon EXPR { $$ = node3(_range, $1, $3, NULL); }
     | EXPR double_colon EXPR double_colon EXPR { $$ = node3(_range, $1, $3, $5); }
     | '!' EXPR { $$ = node1('!', $2); }
@@ -231,7 +233,7 @@ val_t *ex(ast_t *t) {
             }
         case STMT:
             return ex(t->c[0]);
-        case _return:
+        case _return: {
             val_t *res;
             if (t->c[0]) {
                 res = ex(t->c[0]);
@@ -240,6 +242,7 @@ val_t *ex(ast_t *t) {
             }
             res->return_val = true;
             return res;
+        }
         case '+':
             return addition(ex(t->c[0]), ex(t->c[1]));
         case '-':
@@ -438,6 +441,13 @@ val_t *ex(ast_t *t) {
             val_t *at = ex(t->c[1]);
 
             return value_at(cur->val, val2int(at));
+        }
+        case _in: {
+            val_t *left = ex(t->c[0]);
+            val_t *right = ex(t->c[1]);
+
+            bool res = value_in(left, right);
+            return value_create(&res, BOOL_TYPE);
         }
         case _range: {
             val_t *left = ex(t->c[0]);

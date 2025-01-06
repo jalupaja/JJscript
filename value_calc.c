@@ -3,6 +3,7 @@
 #include "value.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #define DEBUG 0
@@ -318,7 +319,6 @@ val_t *power(val_t *a, val_t *b) {
 }
 
 val_t *modulo(val_t *a, val_t *b) {
-  // TODO  implement (also header, lexer, ...)
   if (DEBUG)
     printf("MODULOing: %s %% %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
@@ -433,6 +433,52 @@ val_t *greater_equal_than(val_t *a, val_t *b) {
     printf("CMP: %s >= %s -> %d\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)), res);
   return value_create(&res, BOOL_TYPE);
+}
+
+bool value_in(val_t *a, val_t *b) {
+  if (DEBUG)
+    printf("VALUE_IN: ");
+  if (!a || !b)
+    return false;
+  if (DEBUG)
+    printf("%s + %s\n", string_get_chars(val2string(a)),
+           string_get_chars(val2string(b)));
+
+  if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
+    // all in a are also in b
+    bool res;
+    queue *q = a->val.qval;
+    size_t q_len = queue_len(q);
+
+    for (size_t i = 0; i < q_len; i++) {
+      res = value_in(queue_at(q, i), b);
+      if (!res)
+        return false;
+    }
+    return true;
+  } else if (a->val_type == QUEUE_TYPE) {
+    return false;
+  } else if (b->val_type == QUEUE_TYPE) {
+    bool res;
+    queue *q = b->val.qval;
+    size_t q_len = queue_len(q);
+
+    for (size_t i = 0; i < q_len; i++) {
+      res = value_cmp(a, queue_at(q, i)) == 0;
+      if (res)
+        return true;
+    }
+    return false;
+  } else if (b->val_type == STRING_TYPE) {
+    return string_in(val2string(a), b->val.strval);
+  } else if (a->val_type == STRING_TYPE) {
+    return false;
+  }
+
+  val_t *eq = equal(a, b);
+  bool ret = eq->val.boolval;
+  value_free(eq);
+  return ret;
 }
 
 val_t *equal(val_t *a, val_t *b) {

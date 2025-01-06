@@ -55,6 +55,7 @@ ELSE "else"
 WHILE "while"
 FOR "for"
 RETURN "return"
+IN "in"
 LE "<="
 GE ">="
 EQ "=="
@@ -120,6 +121,7 @@ EOL ";"
 {RANDOM}       { return _random; }
 {INPUT}        { return _input; }
 {RETURN}       { return _return; }
+{IN}           { return _in; }
 {OCTAL}        { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
 {HEX}          { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
 {FP}           { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
