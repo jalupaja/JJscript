@@ -11,6 +11,7 @@ typedef struct {
 
 string *string_create(const char *init);
 string *string_copy(string *str);
+size_t string_len(string *str);
 void string_append_char(string *str, const char suffix);
 void string_append_chars(string *str, const char *suffix);
 void string_remove_chars_from_beginning(string *str, int amount);

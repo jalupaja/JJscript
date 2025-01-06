@@ -8,7 +8,7 @@
 
 #define DEBUG 0
 
-ssize_t calc_index(ssize_t index, size_t length) {
+size_t calc_index(size_t index, size_t length) {
   if (length == 0)
     return 0;
   while (index < 0)
@@ -49,7 +49,7 @@ string *string_create(const char *init) {
 
 string *string_copy(string *str) { return string_create(str->data); }
 
-ssize_t string_len(string *str) { return str->length; }
+size_t string_len(string *str) { return str->length; }
 
 void string_append_char(string *str, const char suffix) {
   if (str->length + 1 >= str->capacity) {
@@ -84,7 +84,7 @@ void string_remove_chars_from_beginning(string *str, int amount) {
 }
 
 void string_remove_chars_from_end(string *str, int amount) {
-  ssize_t new_len = str->length - amount;
+  size_t new_len = str->length - amount;
   if (new_len < 0)
     new_len = 0;
   str->data[new_len] = '\0';

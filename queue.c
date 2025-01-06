@@ -115,7 +115,7 @@ queue *queue_copy(queue *q) {
   return new_queue;
 }
 
-ssize_t queue_len(queue *q) { return q->size; }
+size_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, int n) {
   if (DEBUG)
@@ -171,10 +171,10 @@ void queue_append_at(queue *q1, queue *q2, int n) {
     return;
   }
 
-  ssize_t q2_len = q2->size;
+  size_t q2_len = q2->size;
   node *new_node = q2->head;
 
-  for (ssize_t i = 0; i < q2_len; i++) {
+  for (size_t i = 0; i < q2_len; i++) {
     queue_enqueue_at(q1, new_node->val, n + i);
     new_node = new_node->next;
   }

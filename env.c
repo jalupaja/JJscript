@@ -42,8 +42,8 @@ void env_pop() {
 
 env_var_t *queue_search(queue *q, string *id) {
   env_var_t *cur;
-  ssize_t q_len = queue_len(q);
-  for (ssize_t i = 0; i < q_len; i++) {
+  size_t q_len = queue_len(q);
+  for (size_t i = 0; i < q_len; i++) {
     cur = (env_var_t *)queue_at(q, i);
     if (cur != NULL && string_cmp(id, cur->id) == 0)
       return cur;

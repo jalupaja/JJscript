@@ -526,7 +526,7 @@ val_t *fun_call(string *id, queue *args) {
   // start new environment
   env_push();
 
-  ssize_t p_len = queue_len(fun->params);
+  size_t p_len = queue_len(fun->params);
   if (queue_len(args) != p_len) {
     printf("Error: Function '%s' expected %zd arguments but got %zd\n",
            string_get_chars(id), p_len, queue_len(args));
@@ -537,7 +537,7 @@ val_t *fun_call(string *id, queue *args) {
   val_t *p_name_val;
   string *p_name;
   val_t *p_val;
-  for (ssize_t i = 0; i < p_len; i++) {
+  for (size_t i = 0; i < p_len; i++) {
     p_name_val = ex(queue_at(fun->params, i));
     p_name = p_name_val->val.strval;
     p_val = (val_t *)queue_at(args, i);
