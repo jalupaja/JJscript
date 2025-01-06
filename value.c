@@ -239,7 +239,6 @@ double val2float(val_t *val) {
 }
 
 val_t *value_at(val_t *val, int n) {
-  printf("str\n");
   if (!val)
     return value_create(NULL, NULL_TYPE);
 
