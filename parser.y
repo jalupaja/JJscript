@@ -607,7 +607,7 @@ val_t *ex(ast_t *t) {
             val_t *cur;
             for (size_t i = 0; i < expr_len; i++) {
                 cur = value_at(expr, i);
-                env_save(id, cur);
+                env_save(id, value_copy(cur));
                 ex(t->c[2]);
             }
 
