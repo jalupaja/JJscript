@@ -59,6 +59,7 @@ IN "in"
 LE "<="
 GE ">="
 EQ "=="
+NEQ "!="
 AA "++"
 SS "--"
 DELIMITER [,]
@@ -133,6 +134,7 @@ EOL ";"
 {LE}           { return _le; }
 {GE}           { return _ge; }
 {EQ}           { return _eq; }
+{NEQ}          { return _neq; }
 {ASSIGN}       { return assign; }
 {ASSIGN_ADD}   { return assign_add; }
 {ASSIGN_SUB}   { return assign_sub; }

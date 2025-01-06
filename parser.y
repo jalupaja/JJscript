@@ -61,7 +61,7 @@ enum {
 %left '|'
 %left '&'
 %left '!'
-%left '<' '>' _le _ge _eq
+%left '<' '>' _le _ge _eq _neq
 %left _in
 %left colon double_colon
 %left '-' '+'
@@ -117,6 +117,7 @@ IFELSE: _elif EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
       | %empty { $$ = NULL; }
 
 EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
+    | EXPR _neq EXPR { $$ = node2(_neq, $1, $3); }
     | EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '+' EXPR { $$ = node2('+', $1, $3); }
     | EXPR '*' EXPR { $$ = node2('*', $1, $3); }
@@ -261,6 +262,11 @@ val_t *ex(ast_t *t) {
             return greater_equal_than(ex(t->c[0]), ex(t->c[1]));
         case _eq:
             return equal(ex(t->c[0]), ex(t->c[1]));
+        case _neq: {
+            val_t *res = equal(ex(t->c[0]), ex(t->c[1]));
+            res->val.boolval = ! (bool)res->val.boolval;
+            return res;
+        }
         case '^':
             return power(ex(t->c[0]), ex(t->c[1]));
         case '%':
