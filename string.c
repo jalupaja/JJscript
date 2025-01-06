@@ -176,7 +176,7 @@ void string_repeat(string *str, size_t n) {
   str->data[str->length] = '\0';
 }
 
-char string_char_at(string *str, size_t index) {
+char string_get_char_at(string *str, size_t index) {
   index = calc_index(index, str->length);
   return str->data[index];
 }

@@ -47,7 +47,7 @@ enum {
 %token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
-%token _arr
+%token _arr <val> _arr_call
 %token <val> embed_lcurly
 %token _input _inline_expr _print <val> val fun
 %token assign_id assign_fun eol delim
@@ -145,6 +145,8 @@ EMBED_STR: embed_lcurly EXPR rcurly str_end {
 VAL:      val { $$ = node0(val); $$->val = $1; }
 FUN_CALL: ID lbrak ARGS rbrak { $$ = node1(fun, $1); $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
 ID_EVAL:  ID { $$ = node1(_id_eval, $1); }
+        | ID lsquare EXPR rsquare { $$ = node2(_arr_call, $1, $3); }
+
 ID:       id_start id_end { $$ = node0(_id); $$->val = $2; }
         | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); }
 
@@ -390,9 +392,18 @@ val_t *ex(ast_t *t) {
 
             val_t *ret = value_create(new_elems, QUEUE_TYPE);
             if (DEBUG) {
-                // TODO TEST
                 printf("LIST ELEMENTS: %s\n", string_get_chars(val2string(ret)));
             }
+            return ret;
+        }
+        case _arr_call: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+            env_var_t *cur = env_search(id);
+            val_t *at = ex(t->c[1]);
+
+            val_t *ret = value_at(cur->val, val2int(at));
+            printf("arr_call ret: %s\n", string_get_chars(val2string(ret)));
             return ret;
         }
         case fun: {

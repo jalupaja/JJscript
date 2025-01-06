@@ -19,7 +19,7 @@ void string_append_string(string *str1, string *str2);
 void string_prefix_chars(const char *prefix, string *str2);
 string *string_substring(string *str, size_t start, size_t end);
 void string_repeat(string *str, size_t n);
-char string_char_at(string *str, size_t index);
+char string_get_char_at(string *str, size_t index);
 char *string_get_chars(string *str);
 char *string_get_chars_at(string *str, size_t index);
 int string_cmp(string *str1, string *str2);

@@ -115,8 +115,8 @@ val_t *string2val(string *str) {
 
   // TODO implement queue in queue if I get bored any time soon
   // QUEUE should be last (other then STRING) as it changes the check variable
-  if (!ret && string_char_at(check, 0) == '[' &&
-      string_char_at(check, -1) == ']') {
+  if (!ret && string_get_char_at(check, 0) == '[' &&
+      string_get_char_at(check, -1) == ']') {
     queue *q = queue_create();
 
     // Create a string instance for manipulation
@@ -205,7 +205,7 @@ bool val2bool(val_t *val) {
     break;
   case STRING_TYPE: {
     string *str = val->val.strval;
-    return str == NULL || string_char_at(str, 0) == '\0';
+    return str == NULL || string_get_char_at(str, 0) == '\0';
   } break;
   default:
     printf("Unsupported value type(val_true)");
@@ -235,6 +235,32 @@ double val2float(val_t *val) {
     return (double)val->val.boolval;
   else
     printf("VAL2FLOAT: Unsupported val_type %d\n", val->val_type);
+  return 0;
+}
+
+val_t *value_at(val_t *val, int n) {
+  printf("str\n");
+  if (!val)
+    return value_create(NULL, NULL_TYPE);
+
+  if (val->val_type == INT_TYPE) {
+    return NULL; // TODO
+  } else if (val->val_type == FLOAT_TYPE) {
+    return NULL; // TODO
+  } else if (val->val_type == BOOL_TYPE) {
+    return NULL; // TODO
+  } else if (val->val_type == NULL_TYPE) {
+    return value_create(NULL, NULL_TYPE);
+  } else if (val->val_type == STRING_TYPE) {
+    char chr = string_get_char_at(val->val.strval, n);
+    string *str = string_create(NULL);
+    string_append_char(str, chr);
+    return value_create(str, STRING_TYPE);
+  } else if (val->val_type == QUEUE_TYPE) {
+    return (val_t *)queue_at(val->val.qval, n);
+  } else {
+    printf("VALUE_AT: Unsupported val_type %d\n", val->val_type);
+  }
   return 0;
 }
 
