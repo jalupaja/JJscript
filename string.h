@@ -9,9 +9,12 @@ typedef struct {
   size_t capacity;
 } string;
 
+typedef struct queue queue;
+
 string *string_create(const char *init);
 string *string_copy(string *str);
 size_t string_len(string *str);
+queue *string_split(string *str, string *delim);
 void string_append_char(string *str, const char suffix);
 void string_append_chars(string *str, const char *suffix);
 void string_remove_chars_from_beginning(string *str, int amount);
@@ -26,7 +29,9 @@ char *string_get_chars_at(string *str, size_t index);
 int string_cmp(string *str1, string *str2);
 int string_cmp_chars(string *str1, const char *str2);
 void string_strip(string *str);
-string *string_tokenize(string *str, const char *delimiters, size_t *position);
+string *string_tokenize_string(string *str, string *delim, size_t *position);
+string *string_tokenize_chars(string *str, const char *delimiters,
+                              size_t *position);
 void string_clear(string *str);
 void string_free(string *str);
 

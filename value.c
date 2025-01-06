@@ -184,6 +184,8 @@ string *val2string(val_t *val) {
 }
 
 void value_print(val_t *val) {
+  if (!val)
+    return;
   string *str = val2string(val);
   printf("%s", string_get_chars(str));
   // TODO should free but crashes when printing a queue?

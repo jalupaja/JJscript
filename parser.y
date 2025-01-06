@@ -49,20 +49,23 @@ enum {
 %token _id id_start <val> id_end <id> _id_eval
 %token _arr <val> _range _arr_call _arr_eval
 %token <val> embed_lcurly
-%token _input _inline_expr _print <val> val fun
+%token _input _inline_expr _print _printl <val> val fun
 %token assign_id assign_fun eol delim
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS EMBED_STR EMBED_ID
 %type <ast> VAL LIST FUN_CALL ID ID_EVAL STMTS STMT NON_STMT EXPR IFELSE STRING
 
-%precedence delim
+%left delim
 %left assign assign_add assign_sub assign_mul assign_div assign_mod
 %left '<' '>' _le _ge _eq _eq_a _eq_s _eq_m _eq_d _eq_mod
 %left '&' '|' colon double_colon
 %left '-' '+' _aa _ss
 %left '*' '/' '%'
-%right '^' '!'
+%right '^'
+%right '!' _len
+%left _split
+
 %%
 
 S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); ex($1); }
@@ -71,8 +74,7 @@ STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS NON_STMT { $$ = node2(STMTS, $1, $2); }
      | %empty { $$ = NULL; }
 
-STMT: _print EXPR { $$ = node1(_print, $2); }
-    | ID assign EXPR { $$ = node2(assign_id, $1, $3); }
+STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | ID assign_add EXPR { $$ = node2(assign_add, $1, $3); }
     | ID assign_sub EXPR { $$ = node2(assign_sub, $1, $3); }
     | ID assign_mul EXPR { $$ = node2(assign_mul, $1, $3); }
@@ -80,7 +82,11 @@ STMT: _print EXPR { $$ = node1(_print, $2); }
     | ID assign_mod EXPR { $$ = node2(assign_mod, $1, $3); }
     | ID _aa { $$ = node1(_aa, $1); }
     | ID _ss { $$ = node1(_ss, $1); }
-    | _return EXPR { $$ = node1(_return, $2); }
+    | _print lbrak EXPR rbrak { $$ = node1(_print, $3); }
+    | _printl lbrak EXPR rbrak { $$ = node1(_printl, $3); }
+    | _print lbrak rbrak { $$ = node1(_print, NULL); }
+    | _printl lbrak rbrak { $$ = node1(_printl, NULL); }
+    | _return lbrak EXPR rbrak { $$ = node1(_return, $3); }
     | EXPR { $$ = node1(STMT, $1); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
@@ -125,8 +131,13 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | FUN_CALL
     | ID_EVAL
     | STRING
-    | _input STRING { $$ = node0(_input); $$->val = $2->val; }
-    | _input { $$ = node0(_input); }
+    | _input lbrak STRING rbrak { $$ = node0(_input); $$->val = $3->val; }
+    | _input lbrak rbrak { $$ = node0(_input); }
+    | _len lbrak EXPR rbrak { $$ = node1(_len, $3); }
+    | _split lbrak EXPR delim EXPR delim rbrak { $$ = node2(_split, $3, $5); /* range with trailing comma */ }
+    | _split lbrak EXPR delim EXPR rbrak { $$ = node2(_split, $3, $5); /* range */ }
+    | _split lbrak EXPR rbrak { $$ = node2(_split, $3, NULL); }
+
 
 LIST: lsquare ARGS rsquare { $$ = node0(_arr); $$->val = value_create($2, QUEUE_TYPE); }
 
@@ -527,10 +538,45 @@ val_t *ex(ast_t *t) {
         }
         case _print: {
             val_t *val = ex(t->c[0]);
-            printf("> ");
             value_print(val);
+            return value_create(NULL, NULL_TYPE);
+        }
+        case _printl: {
+            if (t->c[0]) {
+                val_t *val = ex(t->c[0]);
+                value_print(val);
+            }
             printf("\n");
             return value_create(NULL, NULL_TYPE);
+        }
+        case _len: {
+            val_t *val = ex(t->c[0]);
+            if (!val || val->val_type == NULL_TYPE) {
+                return value_create(NULL, NULL_TYPE);
+            }
+            size_t len = value_len(val);
+            return value_create(&len, INT_TYPE);
+        }
+        case _split: {
+            val_t *val = ex(t->c[0]);
+            string *delim;
+            if (t->c[1]) {
+                val_t *delim_val = ex(t->c[1]);
+                delim = val2string(delim_val);
+            } else {
+                delim = string_create(" ");
+            }
+
+            queue *ret;
+            if (val->val_type == STRING_TYPE) {
+                ret = string_split(val->val.strval, delim);
+            } else if (val->val_type == QUEUE_TYPE) {
+                ret = queue_copy(val->val.qval);
+            } else {
+                ret = queue_create();
+                queue_enqueue(ret, val);
+            }
+            return value_create(ret, QUEUE_TYPE);
         }
         case _if:
             if (val2bool(ex(t->c[0]))) {

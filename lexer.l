@@ -49,7 +49,10 @@ STR_DOUBLE "\""
 MULTI_STR_DOUBLE "\"\"\""
 STR_SINGLE "'"
 MULTI_STR_SINGLE "'''"
+PRINTLN "printl"
 PRINT "print"
+LEN "len"
+SPLIT "split"
 INPUT "input"
 ELIF "elif"
 IF "if"
@@ -116,6 +119,9 @@ EOL ";"
 {WHILE}        { return _while; }
 {FOR}          { return _for; }
 {PRINT}        { return _print; }
+{PRINTLN}      { return _printl; }
+{LEN}          { return _len; }
+{SPLIT}          { return _split; }
 {INPUT}        { return _input; }
 {RETURN}       { return _return; }
 {OCTAL}        { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }

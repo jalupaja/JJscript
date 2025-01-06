@@ -1,4 +1,6 @@
 #include "string.h"
+#include "queue.h"
+#include "value.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +52,21 @@ string *string_create(const char *init) {
 string *string_copy(string *str) { return string_create(str->data); }
 
 size_t string_len(string *str) { return str->length; }
+
+queue *string_split(string *str, string *delim) {
+  if (!str || !delim)
+    return queue_create();
+
+  queue *ret = queue_create();
+  string *token;
+  size_t pos = 0;
+
+  while ((token = string_tokenize_string(str, delim, &pos)) != NULL) {
+    queue_enqueue(ret, value_create(token, STRING_TYPE));
+  }
+
+  return ret;
+}
 
 void string_append_char(string *str, const char suffix) {
   if (str->length + 1 >= str->capacity) {
@@ -224,7 +241,47 @@ void string_strip(string *str) {
   str->length = new_len;
 }
 
-string *string_tokenize(string *str, const char *delimiters, size_t *position) {
+bool string_starts_with(string *str1, string *str2, size_t skip) {
+  if (str2->length > str1->length - skip) {
+    return false;
+  } else {
+    string *tmp = string_substring(str1, skip, skip + str2->length);
+    bool ret = string_cmp(tmp, str2) == 0;
+    // string_free(tmp);
+    return ret;
+  }
+}
+
+string *string_tokenize_string(string *str, string *delim, size_t *position) {
+  if (!str || !delim || *position >= str->length) {
+    return NULL;
+  }
+  char *delimiter = string_get_chars(delim);
+
+  size_t start = *position;
+
+  while (start < str->length && string_starts_with(str, delim, start)) {
+    start += strlen(delimiter);
+  }
+
+  if (start >= str->length) {
+    *position = str->length;
+    return NULL;
+  }
+
+  size_t end = start;
+
+  while (end < str->length && !string_starts_with(str, delim, end)) {
+    end++;
+  }
+
+  string *token = string_substring(str, start, end);
+  *position = end + strlen(delimiter);
+  return token;
+}
+
+string *string_tokenize_chars(string *str, const char *delimiters,
+                              size_t *position) {
   if (*position >= str->length) {
     return NULL; // No more tokens
   }
