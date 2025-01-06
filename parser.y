@@ -189,22 +189,19 @@ string *join_embeds(queue *segments) {
     ast_t *emb;
     val_t *res;
     string *suffix;
-    while (queue_len(segments) > 0) {
+    size_t q_len = queue_len(segments);
+    for (size_t i = 0; i < q_len; i += 3) {
 
-        prefix = (string *)queue_dequeue(segments);
-        emb = (ast_t *)queue_dequeue(segments);
-        suffix = (string *)queue_dequeue(segments);
+        prefix = (string *)queue_at(segments, i);
+        emb = (ast_t *)queue_at(segments, i + 1);
+        suffix = (string *)queue_at(segments, i + 2);
 
         res = ex(emb);
 
         string_append_string(str, prefix);
         string_append_string(str, val2string(res));
         string_append_string(str, suffix);
-
-        string_free(prefix);
-        string_free(suffix);
     }
-    queue_free(segments);
 
     env_pop();
     return str;
