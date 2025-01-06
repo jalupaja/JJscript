@@ -55,6 +55,7 @@ ELIF "elif"
 IF "if"
 ELSE "else"
 WHILE "while"
+FOR "for"
 RETURN "return"
 LE "<="
 GE ">="
@@ -75,6 +76,7 @@ LSQARE "["
 RSQARE "]"
 LCURLY "{"
 RCURLY "}"
+COLON ":"
 EOL ";"
 
 %option noyywrap noinput stack noyy_top_state
@@ -111,6 +113,7 @@ EOL ";"
 {ELIF}       { return _elif; }
 {ELSE}       { return _else; }
 {WHILE}      { return _while; }
+{FOR}        { return _for; }
 {PRINT}      { return _print; }
 {INPUT}      { return _input; }
 {RETURN}     { return _return; }
@@ -120,6 +123,7 @@ EOL ";"
 {BOOLEAN}    { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}        { yylval.val = value_create(NULL, NULL_TYPE); return val; }
 {EOL}        { return eol; }
+{COLON}      { return colon; }
 {LE}         { return _le; }
 {GE}         { return _ge; }
 {EQ}         { return _eq; }

@@ -45,6 +45,7 @@ long val2int(val_t *val);
 double val2float(val_t *val);
 val_t *string2val(string *str);
 string *val2string(val_t *val);
+size_t value_len(val_t *val);
 val_t *value_at(val_t *val, int n);
 
 void value_free(val_t *val);

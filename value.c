@@ -238,16 +238,38 @@ double val2float(val_t *val) {
   return 0;
 }
 
+size_t value_len(val_t *val) {
+  if (!val)
+    return 0;
+
+  if (val->val_type == INT_TYPE) {
+    return 1;
+  } else if (val->val_type == FLOAT_TYPE) {
+    return 1;
+  } else if (val->val_type == BOOL_TYPE) {
+    return 1;
+  } else if (val->val_type == NULL_TYPE) {
+    return 0;
+  } else if (val->val_type == STRING_TYPE) {
+    return string_len(val->val.strval);
+  } else if (val->val_type == QUEUE_TYPE) {
+    return queue_len(val->val.qval);
+  } else {
+    printf("VALUE_LEN: Unsupported val_type %d\n", val->val_type);
+  }
+  return 0;
+}
+
 val_t *value_at(val_t *val, int n) {
   if (!val)
     return value_create(NULL, NULL_TYPE);
 
   if (val->val_type == INT_TYPE) {
-    return NULL; // TODO
+    return val; // TODO maybe index of its string?
   } else if (val->val_type == FLOAT_TYPE) {
-    return NULL; // TODO
+    return val; // TODO maybe index of its string?
   } else if (val->val_type == BOOL_TYPE) {
-    return NULL; // TODO
+    return val; // TODO maybe something funnier?
   } else if (val->val_type == NULL_TYPE) {
     return value_create(NULL, NULL_TYPE);
   } else if (val->val_type == STRING_TYPE) {

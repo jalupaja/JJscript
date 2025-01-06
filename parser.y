@@ -43,14 +43,14 @@ enum {
 
 %define parse.error detailed
 
-%token _if _elif _else _while
+%token _if _elif _else _while _for
 %token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
 %token _arr <val> _arr_call _arr_eval
 %token <val> embed_lcurly
 %token _input _inline_expr _print <val> val fun
-%token assign_id assign_fun eol delim
+%token assign_id assign_fun eol colon delim
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS EMBED_STR EMBED_ID
@@ -86,6 +86,8 @@ STMT: _print EXPR { $$ = node1(_print, $2); }
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
         | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
+        | _for ID colon EXPR lcurly STMTS rcurly { $$ = node3(_for, $2, $4, $6); }
+        | _for lbrak ID colon EXPR rbrak lcurly STMTS rcurly { $$ = node3(_for, $3, $5, $8); }
         | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
 
 PARAMS: PARAMS delim ID { queue_enqueue($1, $3); $$ = $1; }
@@ -500,6 +502,22 @@ val_t *ex(ast_t *t) {
                 ex(t->c[1]);
             }
             return value_create(NULL, NULL_TYPE);
+        case _for: {
+            val_t *id_val = ex(t->c[0]);
+            string *id = id_val->val.strval;
+
+            val_t *expr = ex(t->c[1]);
+
+            size_t expr_len = value_len(expr);
+            val_t *cur;
+            for (size_t i = 0; i < expr_len; i++) {
+                cur = value_at(expr, i);
+                env_save(id, cur);
+                ex(t->c[2]);
+            }
+
+            return value_create(NULL, NULL_TYPE);
+        }
         default:
             // TODO ERROR
             printf("Unsupported node type %d\n", t->type);
