@@ -1,0 +1,103 @@
+options = ["rock", "paper", "scissors", "lizard", "spock"];
+
+// TODO rename Calculation trainer
+check_win = {(p1, p2)
+    if p1 == p2 {
+        return(-1);
+    }
+
+    if (p1 == "rock" & p2 in ["scissors", "lizard"])   |
+        (p1 == "paper" & p2 in ["rock", "spock"])      |
+        (p1 == "scissors" & p2 in ["paper", "lizard"]) |
+        (p1 == "lizard" & p2 in ["spock", "paper"])    |
+        (p1 == "spock" & p2 in ["scissors", "rock"]) {
+        return(0);
+    } else {
+        return(1);
+    }
+}
+
+cheat = {(p2)
+    if (p2 == "rock") {
+        return("paper");
+    } elif (p2 == "paper") {
+        return("scissors");
+    } elif (p2 == "scissors") {
+        return("rock");
+    } elif (p2 == "lizard") {
+        return("rock");
+    } elif (p2 == "spock") {
+        return("lizard");
+    }
+}
+
+
+round = {()
+    choice1 = options[rand(0, 4)];
+    choice2 = input("Choose one: ${options}\n: ");
+
+    // check if choice2 is a string in options
+    if (!choice2 in options) {
+        // bound checking. The programming language won't fail but it will look wrong.
+        o_len = len(options);
+        if (choice2 <= 0 | choice2 > o_len) { // use human indexing
+            printl("""${choice2}"" is not a valid choice!");
+            return();
+        } else {
+            choice2 = options[choice2 - 1];
+        }
+    }
+
+    if (win_next_round) {
+        win_next_round = false;
+        choice1 = cheat(choice2);
+    }
+
+    res = check_win(choice1, choice2);
+    printl("I chose ${choice1} and you chose ${choice2}.");
+
+    if (res == -1) {
+        draws++;
+        lost_last_round = false;
+        printl("It's a draw.");
+    } elif (res == 0) {
+        computer_wins++;
+        lost_last_round = false;
+        printl("So I won!");
+    } elif (res == 1) {
+        player_wins++;
+        if (lost_last_round) {
+            win_next_round = true;
+        }
+        lost_last_round = true;
+        printl("So you won...");
+    } else {
+        printl("something went terribly wrong...");
+    }
+    printl();
+
+    if (!(round % 3)) {
+        printl("Stats after round ${round}:");
+        printl("Computer wins: ${computer_wins}");
+        printl("Player wins: ${player_wins}");
+        printl("Draws: ${draws}");
+        if (cheats > 3) {
+            printl("\n(Cheats: ${cheats})");
+        }
+        printl();
+    }
+    round_counter++;
+}
+
+computer_wins = 0;
+player_wins = 0;
+draws = 0;
+round_counter = 1;
+cheats = 0;
+
+lost_last_round = false;
+win_next_round = false;
+
+while (true) {
+    round();
+}
