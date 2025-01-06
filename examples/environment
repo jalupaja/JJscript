@@ -1,0 +1,10 @@
+
+v = 1;
+printl("outside env: ${v}");
+{
+    printl("inside env: ${v}");
+    v += 2;
+    printl("changed value");
+    printl("inside env: ${v}");
+}
+print("outside env: ${"test"}.");

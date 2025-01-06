@@ -1,0 +1,30 @@
+printl(5 + 3);    // Expected: 10 (octal...)
+printl(5 - 3);    // Expected: 2
+printl(5 * 3);    // Expected: 17
+printl(10 / 2);   // Expected: 4.00
+printl(10 % 3);   // Expected: 2
+printl(2 ^ 3);    // Expected: 10
+
+// Test cases for relational operators
+printl(5 < 3);    // Expected: false
+printl(5 > 3);    // Expected: true
+printl(5 <= 3);   // Expected: false
+printl(5 >= 3);   // Expected: true
+printl(5 == 3);   // Expected: false
+
+// Test cases for unary operator
+printl(!5);       // Expected: false
+printl(!0);       // Expected: true
+printl(true & true);   // Expected true
+printl(false & false); // Expected false
+printl(true | false);  // Expected true
+printl(false | false); // Expected false
+
+printl(1. + 2);    // Expected 3.00
+printl("abc" + 1); // Expected abc1
+printl(1 + "abc"); // Expected 1abc
+printl(true + "abc"); // Expected trueabc
+printl(1 - 1.2); // Expected -0.20
+printl("abc" - 1); // Expected ab
+printl(1 - "abc"); // Expected bc
+printl("abc" * 3); // Expected abcabcabc

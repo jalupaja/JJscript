@@ -1,0 +1,21 @@
+inp = input("Enter a string: ");
+frame_chr = "*";
+
+words = split(inp, " ");
+
+max_len = 0;
+for w : words {
+    if len(w) > max_len {
+        max_len = len(w);
+    }
+}
+
+printl(frame_chr * (max_len + 4));
+
+for w : words {
+    spaces = max_len - len(w);
+    // printl(frame_chr + " " + w + (" " * spaces) + " " + frame_chr);
+    printl("${frame_chr} ${w}${" " * spaces} ${frame_chr}");
+}
+
+printl(frame_chr * (max_len + 4));

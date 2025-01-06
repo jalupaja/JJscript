@@ -1,0 +1,10 @@
+a = 3;
+
+range = -0:7;
+printl(-3.5::3::0.5);
+printl("A" : "z");
+
+printl("You can print anything: ${a * 2}. \n${"even strings in strings!"}");
+
+printl('or lists in ''-quote strings: ${range}');
+

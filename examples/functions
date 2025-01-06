@@ -1,0 +1,13 @@
+test = {(a)
+    if (a >= 2) {
+        return("STOP");
+    }
+    if (a >= 1) {
+        return("THE END");
+    }
+    "NVM";
+}
+
+printl(test (2));
+printl(test (1));
+printl(test (0));
