@@ -86,6 +86,7 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | _printl lbrak EXPR rbrak { $$ = node1(_printl, $3); }
     | _print lbrak rbrak { $$ = node1(_print, NULL); }
     | _printl lbrak rbrak { $$ = node1(_printl, NULL); }
+    | _return lbrak rbrak { $$ = node1(_return, NULL); }
     | _return lbrak EXPR rbrak { $$ = node1(_return, $3); }
     | EXPR { $$ = node1(STMT, $1); }
 
@@ -223,7 +224,12 @@ val_t *ex(ast_t *t) {
         case STMT:
             return ex(t->c[0]);
         case _return:
-            val_t *ret = ex(t->c[0]);
+            val_t *ret;
+            if (t->c[0]) {
+                ret = ex(t->c[0]);
+            } else {
+                ret = value_create(NULL, NULL_TYPE);
+            }
             ret->return_val = true;
             return ret;
         case '+':
