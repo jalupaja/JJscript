@@ -123,10 +123,10 @@ val_t *string2val(string *str) {
     string_remove_chars_from_beginning(check, 1);
     string_remove_chars_from_end(check, 1);
 
-    size_t position = 0;
+    size_t pos = 0;
     string *token;
 
-    while ((token = string_tokenize(check, ",", &position)) != NULL) {
+    while ((token = string_tokenize_chars(check, ",", &pos)) != NULL) {
       string_strip(token);
 
       val_t *element = string2val(token);
@@ -186,7 +186,8 @@ string *val2string(val_t *val) {
 void value_print(val_t *val) {
   string *str = val2string(val);
   printf("%s", string_get_chars(str));
-  string_free(str);
+  // TODO should free but crashes when printing a queue?
+  // string_free(str);
 }
 
 bool val2bool(val_t *val) {

@@ -59,7 +59,8 @@ env_var_t *env_search(string *id) {
     env_var_t *res = (env_var_t *)queue_search(env->vars, id);
     if (res != NULL) {
       if (DEBUG)
-        printf("env_search res(%p)\n", res);
+        printf("env_search res(%p): %s\n", res,
+               string_get_chars(val2string(res->val)));
       return res;
     }
     env = env->parent;
@@ -76,8 +77,8 @@ env_var_t *env_search_top(string *id) {
 void env_save(string *id, val_t *val) {
   env_var_t *cur = env_search_top(id);
   if (DEBUG)
-    printf("assign(env: %p): %s = %ld", cur_env, string_get_chars(id),
-           val->val.intval);
+    printf("assign(env: %p): %s = %s", cur_env, string_get_chars(id),
+           string_get_chars(val2string(val)));
   if (cur != NULL) {
     // id already exists -> update value
     if (DEBUG)

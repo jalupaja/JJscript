@@ -437,20 +437,20 @@ val_t *ex(ast_t *t) {
                 string *str = string_create(NULL);
                 if ((int)step == 0)
                     step += 1;
-                for (char l = val2int(left); l <= val2float(right); l += (int)step) {
+                for (char l = val2int(left); l < val2float(right); l += (int)step) {
                     string_append_char(str, l);
                 }
                 ret = value_create(str, STRING_TYPE);
             } else {
                 queue *q = queue_create();
                 if (left->val_type == FLOAT_TYPE || (int)step != step) {
-                    for (double l = val2float(left); l <= val2float(right); l += step) {
+                    for (double l = val2float(left); l < val2float(right); l += step) {
                         queue_enqueue(q, value_create(&l, FLOAT_TYPE));
                     }
                 } else {
                     if ((int)step == 0)
                         step += 1;
-                    for (long l = val2int(left); l <= val2float(right); l += (int)step) {
+                    for (long l = val2int(left); l < val2float(right); l += (int)step) {
                         queue_enqueue(q, value_create(&l, INT_TYPE));
                     }
                 }

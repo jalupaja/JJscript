@@ -83,8 +83,8 @@ void *queue_dequeue(queue *q) {
     q->head->prev = q->tail;
   }
 
-  free(deq_node);
   q->size--;
+  free(deq_node);
 
   if (DEBUG)
     printf("Dequeued element. New size: %zu\n", q->size);
@@ -118,11 +118,13 @@ queue *queue_copy(queue *q) {
 size_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, int n) {
+  if (!q || q->size == 0) {
+    printf("FIND_ITEM RETURNED NULL!!!\n");
+    return NULL;
+  }
+
   if (DEBUG)
     printf("finding in q(%p) %d of %ld\n", q, n, q->size);
-
-  if (q->size == 0)
-    return NULL;
 
   node *cur;
   if (n >= 0) {
@@ -141,7 +143,7 @@ static node *find_item(queue *q, int n) {
 }
 
 void queue_enqueue_at(queue *q, void *data, int n) {
-  if (q->size == 0) {
+  if (!q || q->size == 0) {
     queue_enqueue(q, data);
     return;
   }
@@ -200,8 +202,8 @@ void *queue_dequeue_at(queue *q, int n) {
     q->tail = res->prev;
   }
 
-  free(res);
   q->size--;
+  free(res);
 
   if (DEBUG)
     printf("Dequeued at position %d. New size: %zu\n", n, q->size);
@@ -220,7 +222,7 @@ void *queue_at(queue *q, int n) {
 }
 
 string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
-  if (q->size == 0) {
+  if (q && q->size == 0) {
     return string_create("NULL");
   }
 
@@ -230,14 +232,13 @@ string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
   string *tmp_str;
 
   for (size_t i = 0; i < q->size - 1; i++) {
-    tmp_str = to_string_func(current->val);
+    tmp_str = to_string_func(queue_at(q, i));
     string_append_string(str, tmp_str);
     string_free(tmp_str);
 
     string_append_chars(str, ", ");
-    current = current->next;
   }
-  tmp_str = to_string_func(current->val);
+  tmp_str = to_string_func(queue_at(q, q->size - 1));
   string_append_string(str, tmp_str);
   string_free(tmp_str);
 
