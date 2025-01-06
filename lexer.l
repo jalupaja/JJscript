@@ -18,10 +18,6 @@ void renew_str() {
     cur_str = string_create(NULL);
 }
 
-/* TODO like f-strings
-<MULTI_STRING_DOUBLE>"\\${" { string_append_chars(cur_str, "${"); }
-<MULTI_STRING_DOUBLE>"${" { yy_push_state(YYSTATE); BEGIN(EXPRESSION); }
-*/
 %}
 
 %x EMBED
@@ -39,12 +35,10 @@ NUM   [0-9]+
 FP  -?({NUM}\.{NUM}f?|{NUM}\.f?|\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
-ID_START [a-zA-Z_\-]
-ID_PART [a-zA-Z_\-0-9]
+ID_START [a-zA-Z\_]
+ID_PART [a-zA-Z\_0-9]
 HEX_NUM ([1-9a-fA-F][0-9a-fA-F]*|0)
 HEX 0x{HEX_NUM}
-PLUS "+"
-MINUS "-"
 STR_DOUBLE "\""
 MULTI_STR_DOUBLE "\"\"\""
 STR_SINGLE "'"
@@ -53,6 +47,7 @@ PRINTLN "printl"
 PRINT "print"
 LEN "len"
 SPLIT "split"
+RANDOM "rand"
 INPUT "input"
 ELIF "elif"
 IF "if"
@@ -121,7 +116,8 @@ EOL ";"
 {PRINT}        { return _print; }
 {PRINTLN}      { return _printl; }
 {LEN}          { return _len; }
-{SPLIT}          { return _split; }
+{SPLIT}        { return _split; }
+{RANDOM}       { return _random; }
 {INPUT}        { return _input; }
 {RETURN}       { return _return; }
 {OCTAL}        { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }

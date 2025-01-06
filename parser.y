@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define DEBUG 0
 
@@ -31,7 +32,6 @@ enum {
     STMTS = 10000,
     STMT,
 };
-
 %}
 
 %union {
@@ -62,9 +62,8 @@ enum {
 %left '&' '|' colon double_colon
 %left '-' '+' _aa _ss
 %left '*' '/' '%'
-%right '^'
-%right '!' _len
-%left _split
+%right '^' '!'
+%left _len _split _random
 
 %%
 
@@ -138,6 +137,9 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | _split lbrak EXPR delim EXPR delim rbrak { $$ = node2(_split, $3, $5); /* range with trailing comma */ }
     | _split lbrak EXPR delim EXPR rbrak { $$ = node2(_split, $3, $5); /* range */ }
     | _split lbrak EXPR rbrak { $$ = node2(_split, $3, NULL); }
+    | _random lbrak EXPR delim EXPR delim rbrak { $$ = node2(_random, $3, $5); }
+    | _random lbrak EXPR delim EXPR rbrak { $$ = node2(_random, $3, $5); }
+    | _random lbrak rbrak { $$ = node2(_random, NULL, NULL); }
 
 
 LIST: lsquare ARGS rsquare { $$ = node0(_arr); $$->val = value_create($2, QUEUE_TYPE); }
@@ -586,6 +588,40 @@ val_t *ex(ast_t *t) {
             }
             return value_create(ret, QUEUE_TYPE);
         }
+        case _random: {
+            val_t *val_1, *val_2;
+            double start, end;
+            bool ret_float = false;
+            if (t->c[0] && t->c[1]) {
+                val_1 = ex(t->c[0]);
+                val_2 = ex(t->c[1]);
+
+                start = val2float(val_1);
+                end = val2float(val_2);
+                ret_float = val_1->val_type == FLOAT_TYPE || val_2->val_type == FLOAT_TYPE;
+            } else {
+                start = 0.0;
+                end = 10.0;
+            }
+
+            if (start > end) {
+                double tmp = start;
+                start = end;
+                end = tmp;
+            }
+
+            if (ret_float) {
+                // pseudo floating points
+                int int_start = (int)(start * 100);
+                int int_end = (int)(end * 100);
+                int int_ret = int_start + rand() % (int_end - int_start + 1);
+                double ret = (double)int_ret / 100.0;
+                return value_create(&ret, FLOAT_TYPE);
+            } else {
+                int ret = (int)start + rand() % ((int)end - (int)start + 1);
+                return value_create(&ret, INT_TYPE);
+            }
+        }
         case _if:
             if (val2bool(ex(t->c[0]))) {
                 return ex(t->c[1]);
@@ -725,6 +761,8 @@ void opt_ast(ast_t *t) {
 }
 
 int main (int argc, char **argv) {
+    srand(time(NULL));
+
     env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
     if (!yyin) {
