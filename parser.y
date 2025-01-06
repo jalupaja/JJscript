@@ -232,14 +232,14 @@ val_t *ex(ast_t *t) {
         case STMT:
             return ex(t->c[0]);
         case _return:
-            val_t *ret;
+            val_t *res;
             if (t->c[0]) {
-                ret = ex(t->c[0]);
+                res = ex(t->c[0]);
             } else {
-                ret = value_create(NULL, NULL_TYPE);
+                res = value_create(NULL, NULL_TYPE);
             }
-            ret->return_val = true;
-            return ret;
+            res->return_val = true;
+            return res;
         case '+':
             return addition(ex(t->c[0]), ex(t->c[1]));
         case '-':
@@ -416,11 +416,11 @@ val_t *ex(ast_t *t) {
                 queue_enqueue(new_elems, new_val);
             }
 
-            val_t *ret = value_create(new_elems, QUEUE_TYPE);
+            val_t *res = value_create(new_elems, QUEUE_TYPE);
             if (DEBUG) {
-                printf("LIST ELEMENTS: %s\n", string_get_chars(val2string(ret)));
+                printf("LIST ELEMENTS: %s\n", string_get_chars(val2string(res)));
             }
-            return ret;
+            return res;
         }
         case _arr_call: {
             val_t *id_val = ex(t->c[0]);
@@ -454,7 +454,7 @@ val_t *ex(ast_t *t) {
                 return value_create(NULL, NULL_TYPE);
             }
 
-            val_t *ret;
+            val_t *res;
             if (left->val_type == STRING_TYPE || right->val_type == STRING_TYPE) {
                 string *str = string_create(NULL);
                 if ((int)step == 0)
@@ -462,7 +462,7 @@ val_t *ex(ast_t *t) {
                 for (char l = val2int(left); l < val2float(right); l += (int)step) {
                     string_append_char(str, l);
                 }
-                ret = value_create(str, STRING_TYPE);
+                res = value_create(str, STRING_TYPE);
             } else {
                 queue *q = queue_create();
                 if (left->val_type == FLOAT_TYPE || (int)step != step) {
@@ -476,10 +476,10 @@ val_t *ex(ast_t *t) {
                         queue_enqueue(q, value_create(&l, INT_TYPE));
                     }
                 }
-                ret = value_create(q, QUEUE_TYPE);
+                res = value_create(q, QUEUE_TYPE);
             }
 
-            return ret;
+            return res;
         }
         case fun: {
             val_t *id_val = ex(t->c[0]);
@@ -506,11 +506,11 @@ val_t *ex(ast_t *t) {
                 printf("\n");
             }
 
-            val_t *result = fun_call(id, new_args);
+            val_t *res = fun_call(id, new_args);
 
             queue_free(new_args);
 
-            return result;
+            return res;
         }
         case _id: {
             string *str;
@@ -584,16 +584,16 @@ val_t *ex(ast_t *t) {
                 delim = string_create(" ");
             }
 
-            queue *ret;
+            queue *res;
             if (val->val_type == STRING_TYPE) {
-                ret = string_split(val->val.strval, delim);
+                res = string_split(val->val.strval, delim);
             } else if (val->val_type == QUEUE_TYPE) {
-                ret = queue_copy(val->val.qval);
+                res = queue_copy(val->val.qval);
             } else {
-                ret = queue_create();
-                queue_enqueue(ret, val);
+                res = queue_create();
+                queue_enqueue(res, val);
             }
-            return value_create(ret, QUEUE_TYPE);
+            return value_create(res, QUEUE_TYPE);
         }
         case _random: {
             val_t *val_1, *val_2;
@@ -622,11 +622,11 @@ val_t *ex(ast_t *t) {
                 int int_start = (int)(start * 100);
                 int int_end = (int)(end * 100);
                 int int_ret = int_start + rand() % (int_end - int_start + 1);
-                double ret = (double)int_ret / 100.0;
-                return value_create(&ret, FLOAT_TYPE);
+                double res = (double)int_ret / 100.0;
+                return value_create(&res, FLOAT_TYPE);
             } else {
-                int ret = (int)start + rand() % ((int)end - (int)start + 1);
-                return value_create(&ret, INT_TYPE);
+                int res = (int)start + rand() % ((int)end - (int)start + 1);
+                return value_create(&res, INT_TYPE);
             }
         }
         case _if:
