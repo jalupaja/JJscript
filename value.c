@@ -221,6 +221,8 @@ long val2int(val_t *val) {
     return (long)val->val.floatval;
   else if (val->val_type == BOOL_TYPE)
     return (long)val->val.boolval;
+  else if (val->val_type == STRING_TYPE)
+    return (long)string_get_char_at(val->val.strval, 0);
   else
     printf("VAL2INT: Unsupported val_type %d\n", val->val_type);
   return 0;
@@ -233,6 +235,8 @@ double val2float(val_t *val) {
     return val->val.floatval;
   else if (val->val_type == BOOL_TYPE)
     return (double)val->val.boolval;
+  else if (val->val_type == STRING_TYPE)
+    return (double)string_get_char_at(val->val.strval, 0);
   else
     printf("VAL2FLOAT: Unsupported val_type %d\n", val->val_type);
   return 0;

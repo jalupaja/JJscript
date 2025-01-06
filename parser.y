@@ -47,10 +47,10 @@ enum {
 %token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
-%token _arr <val> _arr_call _arr_eval
+%token _arr <val> _range _arr_call _arr_eval
 %token <val> embed_lcurly
 %token _input _inline_expr _print <val> val fun
-%token assign_id assign_fun eol colon delim
+%token assign_id assign_fun eol delim
 %token lbrak rbrak lsquare rsquare lcurly rcurly
 
 %type <queue> PARAMS ARGS EMBED_STR EMBED_ID
@@ -59,7 +59,7 @@ enum {
 %precedence delim
 %left assign assign_add assign_sub assign_mul assign_div assign_mod
 %left '<' '>' _le _ge _eq _eq_a _eq_s _eq_m _eq_d _eq_mod
-%left '&' '|'
+%left '&' '|' colon double_colon
 %left '-' '+' _aa _ss
 %left '*' '/' '%'
 %right '^' '!'
@@ -116,6 +116,8 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | EXPR '&' EXPR { $$ = node2('&', $1, $3); }
     | EXPR '|' EXPR { $$ = node2('|', $1, $3); }
     | EXPR '%' EXPR { $$ = node2('%', $1, $3); }
+    | EXPR colon EXPR { $$ = node3(_range, $1, $3, NULL); }
+    | EXPR double_colon EXPR double_colon EXPR { $$ = node3(_range, $1, $3, $5); }
     | '!' EXPR { $$ = node1('!', $2); }
     | lbrak EXPR rbrak  { $$ = $2; }
     | VAL
@@ -414,6 +416,48 @@ val_t *ex(ast_t *t) {
             val_t *at = ex(t->c[1]);
 
             return value_at(cur->val, val2int(at));
+        }
+        case _range: {
+            val_t *left = ex(t->c[0]);
+            val_t *right = ex(t->c[1]);
+            double step = 1;
+            if (t->c[2]) {
+                step = val2float(ex(t->c[2]));
+            }
+
+            if (step <= 0) {
+                return value_create(queue_create(), QUEUE_TYPE);
+            } else if (val2int(left) > val2int(right)) {
+                fprintf(stderr, "The start of the range can't be higher then the end.");
+                return value_create(NULL, NULL_TYPE);
+            }
+
+            val_t *ret;
+            if (left->val_type == STRING_TYPE || right->val_type == STRING_TYPE) {
+                string *str = string_create(NULL);
+                if ((int)step == 0)
+                    step += 1;
+                for (char l = val2int(left); l <= val2float(right); l += (int)step) {
+                    string_append_char(str, l);
+                }
+                ret = value_create(str, STRING_TYPE);
+            } else {
+                queue *q = queue_create();
+                if (left->val_type == FLOAT_TYPE || (int)step != step) {
+                    for (double l = val2float(left); l <= val2float(right); l += step) {
+                        queue_enqueue(q, value_create(&l, FLOAT_TYPE));
+                    }
+                } else {
+                    if ((int)step == 0)
+                        step += 1;
+                    for (long l = val2int(left); l <= val2float(right); l += (int)step) {
+                        queue_enqueue(q, value_create(&l, INT_TYPE));
+                    }
+                }
+                ret = value_create(q, QUEUE_TYPE);
+            }
+
+            return ret;
         }
         case fun: {
             val_t *id_val = ex(t->c[0]);
