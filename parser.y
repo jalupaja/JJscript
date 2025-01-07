@@ -86,8 +86,6 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | ID assign_mul EXPR { $$ = node2(assign_mul, $1, $3); }
     | ID assign_div EXPR { $$ = node2(assign_div, $1, $3); }
     | ID assign_mod EXPR { $$ = node2(assign_mod, $1, $3); }
-    | ID _aa { $$ = node1(_aa, $1); }
-    | ID _ss { $$ = node1(_ss, $1); }
     | _print lbrak EXPR rbrak { $$ = node1(_print, $3); }
     | _printl lbrak EXPR rbrak { $$ = node1(_printl, $3); }
     | _print lbrak rbrak { $$ = node1(_print, NULL); }
@@ -137,6 +135,8 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | EXPR double_colon EXPR double_colon EXPR { $$ = node3(_range, $1, $3, $5); }
     | '!' EXPR { $$ = node1('!', $2); }
     | lbrak EXPR rbrak  { $$ = $2; }
+    | ID _aa { $$ = node1(_aa, $1); }
+    | ID _ss { $$ = node1(_ss, $1); }
     | VAL
     | LIST
     | FUN_CALL
