@@ -11,12 +11,17 @@
 
 #define DEBUG 0
 
-size_t calc_index(size_t index, size_t length) {
+size_t calc_index(long index, size_t length) {
   if (length == 0)
     return 0;
-  while (index < 0)
-    index += length;
-  return index % length;
+  if (index < 0) {
+    index = length + (index % (long)length);
+    if (index < 0) {
+      index += length;
+    }
+  }
+
+  return (size_t)(index % length);
 }
 
 string *string_create(const char *init) {

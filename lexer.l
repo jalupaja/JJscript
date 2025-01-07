@@ -111,7 +111,7 @@ EOL ";"
 <STRING_DOUBLE,STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {DELIMITER}    { return delim; }
-{IF}/{X}       { printf("OK\n"); return _if; }
+{IF}/{X}       { return _if; }
 {ELIF}/{X}     { return _elif; }
 {ELSE}/{X}     { return _else; }
 {WHILE}/{X}    { return _while; }
