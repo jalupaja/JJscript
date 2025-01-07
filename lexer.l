@@ -29,10 +29,10 @@ REVERSE_LINE_COMMENT ^.*\?\?\?
 LINE_COMMENT \/\/.*
 BLOCK_COMMENT_IN "/\*"
 BLOCK_COMMENT_OUT "\*/"
-OCTAL -?[0-7]+
+OCTAL [0-7]+
 NUM   [0-9]+
-DECIMAL -?[0-9]+
-FP  -?({NUM}\.{NUM}f?|{NUM}\.f?|\.{NUM}f?|{NUM}f)
+DECIMAL [0-9]+
+FP  ({NUM}\.{NUM}f?|{NUM}\.f?|\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
 ID_START [a-zA-Z\_]

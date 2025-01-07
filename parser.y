@@ -120,6 +120,8 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | EXPR _neq EXPR { $$ = node2(_neq, $1, $3); }
     | EXPR '-' EXPR { $$ = node2('-', $1, $3); }
     | EXPR '+' EXPR { $$ = node2('+', $1, $3); }
+    | '-' EXPR { $$ = node2('-', NULL, $2); }
+    | '+' EXPR { $$ = node2('+', NULL, $2); }
     | EXPR '*' EXPR { $$ = node2('*', $1, $3); }
     | EXPR '/' EXPR { $$ = node2('/', $1, $3); }
     | EXPR _le EXPR { $$ = node2(_le, $1, $3); }
@@ -245,9 +247,25 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case '+':
-            return addition(ex(t->c[0]), ex(t->c[1]));
-        case '-':
-            return subtraction(ex(t->c[0]), ex(t->c[1]));
+            if (t->c[0] == NULL) {
+                // +3 as number -> not an operation
+                    return ex(t->c[1]);
+            } else {
+                return addition(ex(t->c[0]), ex(t->c[1]));
+            }
+        case '-': {
+            if (t->c[0] == NULL) {
+                // -3 as number -> not an operation
+                printf("start\n");
+                long mul = -1;
+                val_t *mul_val = value_create(&mul, INT_TYPE);
+                val_t *res = multiplication(ex(t->c[1]), mul_val);
+                value_free(mul_val);
+                return res;
+            } else {
+                return subtraction(ex(t->c[0]), ex(t->c[1]));
+            }
+        }
         case '*':
             return multiplication(ex(t->c[0]), ex(t->c[1]));
         case '/':
