@@ -51,22 +51,32 @@ env_var_t *queue_search(queue *q, string *id) {
   return NULL;
 }
 
-env_var_t *env_search(string *id) {
+env_var_t *env_search_all(string *id) {
   if (DEBUG)
-    printf("env_search: %s\n", string_get_chars(id));
+    printf("env_search_all: %s\n", string_get_chars(id));
   env_t *env = cur_env;
   while (env) {
     env_var_t *res = (env_var_t *)queue_search(env->vars, id);
     if (res != NULL) {
       if (DEBUG)
-        printf("env_search res(%p): %s\n", res,
+        printf("env_search_all res(%p): %s\n", res,
                string_get_chars(val2string(res->val)));
       return res;
     }
     env = env->parent;
   }
   if (DEBUG)
-    printf("env_search res()\n");
+    printf("env_search_all res()\n");
+  return NULL;
+}
+
+val_t *env_search(val_t *id) {
+  if (id->val_type == STRING_TYPE) {
+    env_var_t *found = env_search_all(id->val.strval);
+    if (found) {
+      return found->val;
+    }
+  }
   return NULL;
 }
 
@@ -74,23 +84,81 @@ env_var_t *env_search_top(string *id) {
   return (env_var_t *)queue_search(cur_env->vars, id);
 }
 
-void env_save(string *id, val_t *val) {
-  env_var_t *cur = env_search_top(id);
+void env_save(val_t *id, val_t *val) {
+  // TODO could prob. free overwritten values...
+  env_var_t *cur = env_search_top(id->val.strval);
   if (DEBUG)
-    printf("assign(env: %p): %s = %s", cur_env, string_get_chars(id),
-           string_get_chars(val2string(val)));
+    printf("assign(env: %p): %s = %s", cur_env,
+           string_get_chars(id->val.strval), string_get_chars(val2string(val)));
+
+  queue *indexes = id->indexes;
+  val_t **to_save_to;
+
   if (cur != NULL) {
+    to_save_to = &cur->val;
     // id already exists -> update value
     if (DEBUG)
       printf("(old)\n");
-    cur->val = val;
+
+    if (indexes) {
+      if (DEBUG)
+        printf("env_search found indexes\n");
+
+      size_t q_len = queue_len(indexes);
+      for (size_t i = 0; i < q_len; i++) {
+        long *index = (long *)queue_at(indexes, i);
+        if (!index) {
+          fprintf(stderr, "Found invalid index\n");
+          break;
+        }
+        // TODO wrong
+        val_t **res = value_ptr_at(*to_save_to, *index);
+        printf("found value after index %ld\n", *index);
+        to_save_to = res;
+      }
+    }
+    printf("to_save_to: '%s'\n", string_get_chars(val2string(*to_save_to)));
+    *to_save_to = val;
 
   } else {
     // enqueue new value
     if (DEBUG)
       printf("(new)\n");
+    if (indexes) { // if value is supposed to be an array, copy it from lower
+                   // environments, then change the value
+      if (DEBUG)
+        printf("env_search found indexes\n");
+      cur = env_search_all(id->val.strval);
+
+      if (cur != NULL) {
+        val_t *new_val = value_copy(cur->val);
+        // TODO check for integers
+        to_save_to = &new_val;
+
+        size_t q_len = queue_len(indexes);
+        for (size_t i = 0; i < q_len; i++) {
+          long *index = (long *)queue_at(indexes, i);
+          if (!index) {
+            fprintf(stderr, "Found invalid index\n");
+            break;
+          }
+          // // TODO wrong
+          val_t **res = value_ptr_at(*to_save_to, *index);
+          // printf("found value after index %ld\n", *index);
+          to_save_to = res;
+        }
+        // save value
+        *to_save_to = val;
+
+        env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
+        new->id = id->val.strval;
+        new->val = new_val;
+        queue_enqueue(cur_env->vars, new);
+        return;
+      }
+    }
     env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
-    new->id = id;
+    new->id = id->val.strval;
     new->val = val;
     queue_enqueue(cur_env->vars, new);
   }

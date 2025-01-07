@@ -33,6 +33,7 @@ struct val_t {
   union data_value val;
   val_type_t val_type;
   bool return_val;
+  queue *indexes;
 };
 
 val_t *value_create(void *new_val, val_type_t val_type);
@@ -46,7 +47,8 @@ double val2float(val_t *val);
 val_t *string2val(string *str);
 string *val2string(val_t *val);
 size_t value_len(val_t *val);
-val_t *value_at(val_t *val, int n);
+val_t **value_ptr_at(val_t *val, long n);
+val_t *value_at(val_t *val, long n);
 
 void value_free(val_t *val);
 

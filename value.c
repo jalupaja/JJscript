@@ -34,6 +34,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
   }
   val->val_type = val_type;
   val->return_val = false;
+  val->indexes = NULL;
 
   return val;
 }
@@ -275,30 +276,36 @@ size_t value_len(val_t *val) {
   return 0;
 }
 
-val_t *value_at(val_t *val, int n) {
-  if (!val)
-    return value_create(NULL, NULL_TYPE);
-
-  if (val->val_type == INT_TYPE) {
-    return val; // TODO maybe index of its string?
+val_t **value_ptr_at(val_t *val, long n) {
+  val_t **ret = NULL;
+  if (!val) {
+    val_t *null_val = value_create(NULL, NULL_TYPE);
+    ret = &null_val;
+  } else if (val->val_type == INT_TYPE) {
+    ret = &val; // TODO maybe index of its string?
   } else if (val->val_type == FLOAT_TYPE) {
-    return val; // TODO maybe index of its string?
+    ret = &val; // TODO maybe index of its string?
   } else if (val->val_type == BOOL_TYPE) {
-    return val; // TODO maybe something funnier?
+    ret = &val; // TODO maybe something funnier?
   } else if (val->val_type == NULL_TYPE) {
-    return value_create(NULL, NULL_TYPE);
+    val_t *null_val = value_create(NULL, NULL_TYPE);
+    ret = &null_val;
   } else if (val->val_type == STRING_TYPE) {
     char chr = string_get_char_at(val->val.strval, n);
     string *str = string_create(NULL);
     string_append_char(str, chr);
-    return value_create(str, STRING_TYPE);
+    // TODO change if I want to allow str[0] =...
+    val_t *string_val = value_create(str, STRING_TYPE);
+    ret = &string_val;
   } else if (val->val_type == QUEUE_TYPE) {
-    return (val_t *)queue_at(val->val.qval, n);
+    ret = (val_t **)queue_ptr_at(val->val.qval, n);
   } else {
     printf("VALUE_AT: Unsupported val_type %d\n", val->val_type);
   }
-  return 0;
+  return ret;
 }
+
+val_t *value_at(val_t *val, long n) { return *value_ptr_at(val, n); }
 
 void value_free(val_t *val) {
 #ifndef NO_FREE

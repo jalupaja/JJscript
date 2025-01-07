@@ -21,7 +21,7 @@ struct env_var_t {
 
 void env_push();
 void env_pop();
-env_var_t *env_search(string *id);
-void env_save(string *id, val_t *val);
+val_t *env_search(val_t *id);
+void env_save(val_t *id, val_t *val);
 
 #endif // ENV_H

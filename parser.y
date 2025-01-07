@@ -25,7 +25,7 @@ void yyerror (const char *msg) {
 
 typedef struct ast_t ast_t;
 val_t *ex (ast_t *t);
-val_t *fun_call(string *id, queue *args);
+val_t *fun_call(val_t *id, queue *args);
 void opt_ast ( ast_t *t);
 
 enum {
@@ -47,7 +47,7 @@ enum {
 %token _return
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
-%token _arr <val> _range _arr_call _arr_eval
+%token _arr_create <val> _range _arr_call _arr
 %token <val> embed_lcurly
 %token _input _inline_expr _print _printl <val> val fun
 %token assign_id assign_fun eol delim
@@ -151,7 +151,7 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | _random lbrak rbrak { $$ = node2(_random, NULL, NULL); }
 
 
-LIST: lsquare ARGS rsquare { $$ = node0(_arr); $$->val = value_create($2, QUEUE_TYPE); }
+LIST: lsquare ARGS rsquare { $$ = node0(_arr_create); $$->val = value_create($2, QUEUE_TYPE); }
 
 STRING: str_start str_end { $$ = node0(val); $$->val = $2; }
       | str_start EMBED_STR { $$ = node0(_str); $$->val = value_create($2, QUEUE_TYPE); }
@@ -172,10 +172,10 @@ EMBED_STR: embed_lcurly EXPR rcurly str_end {
 VAL:      val { $$ = node0(val); $$->val = $1; }
 FUN_CALL: ID lbrak ARGS rbrak { $$ = node1(fun, $1); $$->val = value_create($3, QUEUE_TYPE); /* function call */ }
 ID_EVAL:  ID { $$ = node1(_id_eval, $1); }
-        | ID lsquare EXPR rsquare { /* TODO theoretically remove, if _arr_call returns the pointer?/ id +index */ $$ = node2(_arr_eval, $1, $3); }
 
 ID:       id_start id_end { $$ = node0(_id); $$->val = $2; }
         | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); /* TODO | ID lsquare EXPR rsquare { $$ = node2(_arr_call, $1, $3); */ }
+        | ID lsquare EXPR rsquare { /* TODO theoretically remove, if _arr_call returns the pointer?/ id +index */ $$ = node2(_arr, $1, $3); }
 
 EMBED_ID: embed_lcurly EXPR rcurly id_end {
            $$ = queue_create();
@@ -278,132 +278,123 @@ val_t *ex(ast_t *t) {
         case '!':
             return NOT(ex(t->c[0]));
         case assign_id: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *res = ex(t->c[1]);
             if (DEBUG)
-                printf("assign_id: %s = %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_id: %s = %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case assign_add: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *val = ex(t->c[1]);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = addition(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = addition(cur, val);
 
             // TODO? value_free(val);
 
             if (DEBUG)
-                printf("assign_add: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_add: %s += %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case _aa: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             int one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = addition(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = addition(cur, val);
 
             value_free(val);
 
             if (DEBUG)
-                printf("assign_++: %s\n", string_get_chars(id));
+                printf("assign_++: %s\n", string_get_chars(id->val.strval));
             env_save(id, res);
             return res;
         }
         case assign_sub: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *val = ex(t->c[1]);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = subtraction(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = subtraction(cur, val);
 
             // TODO? value_free(val);
 
             if (DEBUG)
-                printf("assign_sub: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_sub: %s += %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case _ss: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             int one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = subtraction(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = subtraction(cur, val);
 
             value_free(val);
 
             if (DEBUG)
-                printf("assign_--: %s\n", string_get_chars(id));
+                printf("assign_--: %s\n", string_get_chars(id->val.strval));
             env_save(id, res);
             return res;
         }
         case assign_mul: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *val = ex(t->c[1]);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = multiplication(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = multiplication(cur, val);
 
             // TODO? value_free(val);
 
             if (DEBUG)
-                printf("assign_mul: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_mul: %s += %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case assign_div: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *val = ex(t->c[1]);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = division(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = division(cur, val);
 
             // TODO? value_free(val);
 
             if (DEBUG)
-                printf("assign_div: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_div: %s += %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case assign_mod: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *val = ex(t->c[1]);
 
-            env_var_t *cur = env_search(id);
-            val_t *res = modulo(cur->val, val);
+            val_t *cur = env_search(id);
+            val_t *res = modulo(cur, val);
 
             // TODO? value_free(val);
 
             if (DEBUG)
-                printf("assign_mod: %s += %s\n", string_get_chars(id), string_get_chars(val2string(res)));
+                printf("assign_mod: %s += %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case assign_fun: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             env_save(id, t->val);
             return t->val;
@@ -415,7 +406,7 @@ val_t *ex(ast_t *t) {
         }
         case val:
             return t->val;
-        case _arr: {
+        case _arr_create: {
             queue *old_elems = t->val->val.qval;
             queue *new_elems = queue_create();
 
@@ -432,21 +423,30 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case _arr_call: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
             // TODO env_save_at
-            env_var_t *cur = env_search(id);
+            val_t *cur = env_search(id);
             val_t *at = ex(t->c[1]);
 
-            return value_at(cur->val, val2int(at));
+            return value_at(cur, val2int(at));
         }
-        case _arr_eval: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
-            env_var_t *cur = env_search(id);
+        case _arr: {
+            val_t *id = ex(t->c[0]);
+
+            queue *indexes = id->indexes;
+            if (!indexes) {
+                id->indexes = queue_create();
+                indexes = id->indexes;
+            }
+
             val_t *at = ex(t->c[1]);
 
-            return value_at(cur->val, val2int(at));
+            // enqueue index to indexes
+            long *int_ptr = (long *)malloc(sizeof(long));
+            *int_ptr = val2int(at);
+            queue_enqueue(indexes, int_ptr);
+
+            return id;
         }
         case _in: {
             val_t *left = ex(t->c[0]);
@@ -498,12 +498,11 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case fun: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
-            env_var_t *cur = env_search(id);
-            if (!cur || cur->val->val_type != FUNCTION_TYPE) {
-                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(id));
+            val_t *cur = env_search(id);
+            if (!cur || cur->val_type != FUNCTION_TYPE) {
+                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(id->val.strval));
                 return value_create(NULL, NULL_TYPE);
             }
 
@@ -544,15 +543,14 @@ val_t *ex(ast_t *t) {
             return value_create(str, STRING_TYPE);
         }
         case _id_eval: {
-            val_t *id_val = ex(t->c[0]);
-            string *str = id_val->val.strval;
-            env_var_t *cur = env_search(str);
+            val_t *id = ex(t->c[0]);
+            val_t *cur = env_search(id);
 
             if (cur) {
-                return cur->val;
+                return cur;
             } else {
                 // TODO maybe crash if id is not assigned yet?
-                fprintf(stderr, "ID '%s' not found!\n", string_get_chars(str));
+                fprintf(stderr, "ID '%s' not found!\n", string_get_chars(id->val.strval));
                 return value_create(NULL, NULL_TYPE);
             }
         }
@@ -666,8 +664,7 @@ val_t *ex(ast_t *t) {
             return ret;
         }
         case _for: {
-            val_t *id_val = ex(t->c[0]);
-            string *id = id_val->val.strval;
+            val_t *id = ex(t->c[0]);
 
             val_t *expr = ex(t->c[1]);
 
@@ -694,19 +691,19 @@ val_t *ex(ast_t *t) {
     return value_create(NULL, NULL_TYPE);
 }
 
-val_t *fun_call(string *id, queue *args) {
+val_t *fun_call(val_t *id, queue *args) {
   if (DEBUG)
-      printf("fun_call (%s) with %ld args\n", string_get_chars(id), queue_len(args));
+      printf("fun_call (%s) with %ld args\n", string_get_chars(id->val.strval), queue_len(args));
   // search function
-  env_var_t *var = env_search(id);
+  val_t *cur = env_search(id);
 
-  if (!var || var->val->val_type != FUNCTION_TYPE) {
+  if (!cur || cur->val_type != FUNCTION_TYPE) {
     // TODO actual error. also below
-    printf("Error: '%s' is not a function \n", string_get_chars(id));
+    printf("Error: '%s' is not a function \n", string_get_chars(id->val.strval));
     return value_create(NULL, NULL_TYPE);
   }
 
-  fun_t *fun = var->val->val.funval;
+  fun_t *fun = cur->val.funval;
 
   // start new environment
   env_push();
@@ -714,20 +711,18 @@ val_t *fun_call(string *id, queue *args) {
   size_t p_len = queue_len(fun->params);
   if (queue_len(args) != p_len) {
     printf("Error: Function '%s' expected %zd arguments but got %zd\n",
-           string_get_chars(id), p_len, queue_len(args));
+           string_get_chars(id->val.strval), p_len, queue_len(args));
     // return value_create(NULL, NULL_TYPE);
   }
 
   // save args to env
-  val_t *p_name_val;
-  string *p_name;
+  val_t *p_name;
   val_t *p_val;
   for (size_t i = 0; i < p_len; i++) {
-    p_name_val = ex(queue_at(fun->params, i));
-    p_name = p_name_val->val.strval;
+    p_name = ex(queue_at(fun->params, i));
     p_val = (val_t *)queue_at(args, i);
     if (DEBUG)
-        printf("\t%s\n", string_get_chars(p_name)); /* not actually a function pointer */
+        printf("\t%s\n", string_get_chars(p_name->val.strval)); /* not actually a function pointer */
     env_save(p_name, p_val);
   }
 

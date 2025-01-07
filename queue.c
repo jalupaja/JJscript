@@ -55,15 +55,15 @@ void queue_enqueue(queue *q, void *data) {
 void queue_append(queue *q1, queue *q2) {
   size_t len = q2->size;
   node *cur = q2->head;
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     queue_enqueue(q1, value_copy(cur->val));
     cur = cur->next;
   }
 }
 
-void queue_repeat(queue *q, int n) {
+void queue_repeat(queue *q, long n) {
   queue *tmp = queue_copy(q);
-  for (int i = 0; i < n; i++)
+  for (long i = 0; i < n; i++)
     queue_append(q, tmp);
   queue_free(tmp);
 }
@@ -109,7 +109,7 @@ queue *queue_copy(queue *q) {
   queue *new_queue = queue_create();
   size_t len = q->size;
   node *cur = q->head;
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     queue_enqueue(new_queue, value_copy(cur->val));
     cur = cur->next;
   }
@@ -118,14 +118,14 @@ queue *queue_copy(queue *q) {
 
 size_t queue_len(queue *q) { return q->size; }
 
-static node *find_item(queue *q, int n) {
+static node *find_item(queue *q, long n) {
   if (!q || q->size == 0) {
     printf("FIND_ITEM RETURNED NULL!!!\n");
     return NULL;
   }
 
   if (DEBUG)
-    printf("finding in q(%p) %d of %ld\n", q, n, q->size);
+    printf("finding in q(%p) %ld of %ld\n", q, n, q->size);
 
   node *cur;
   if (n >= 0) {
@@ -143,7 +143,7 @@ static node *find_item(queue *q, int n) {
   return cur;
 }
 
-void queue_enqueue_at(queue *q, void *data, int n) {
+void queue_enqueue_at(queue *q, void *data, long n) {
   if (!q || q->size == 0) {
     queue_enqueue(q, data);
     return;
@@ -168,7 +168,7 @@ void queue_enqueue_at(queue *q, void *data, int n) {
     printf("Enqueued at position %d. New size: %zu\n", n, q->size);
 }
 
-void queue_append_at(queue *q1, queue *q2, int n) {
+void queue_append_at(queue *q1, queue *q2, long n) {
   if (q1->size == 0) {
     queue_append(q1, q2);
     return;
@@ -183,7 +183,7 @@ void queue_append_at(queue *q1, queue *q2, int n) {
   }
 }
 
-void *queue_dequeue_at(queue *q, int n) {
+void *queue_dequeue_at(queue *q, long n) {
   if (q->size == 0)
     return NULL;
 
@@ -217,7 +217,13 @@ int queue_cmp(queue *q1, queue *q2) {
   return 0;
 }
 
-void *queue_at(queue *q, int n) {
+void **queue_ptr_at(queue *q, long n) {
+  node *res = find_item(q, n);
+  return res ? &res->val : NULL;
+}
+
+void *queue_at(queue *q, long n) {
+  // TODO try. could lead to ptr to NULL? return *queue_ptr_at(q, n);
   node *res = find_item(q, n);
   return res ? res->val : NULL;
 }
@@ -225,7 +231,7 @@ void *queue_at(queue *q, int n) {
 queue *queue_interleave(queue *q1, queue *q2) {
   size_t max_len = max(q1->size, q2->size);
   queue *new = queue_create();
-  for (int i = 0; i < max_len; i++) {
+  for (size_t i = 0; i < max_len; i++) {
     queue_enqueue(new, queue_at(q1, i));
     queue_enqueue(new, queue_at(q2, i));
   }
