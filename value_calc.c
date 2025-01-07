@@ -1,4 +1,5 @@
 #include "value_calc.h"
+#include "queue.h"
 #include "string.h"
 #include "value.h"
 
@@ -126,7 +127,20 @@ val_t *subtraction(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
-    // TODO
+    queue *new = queue_create();
+    queue *rem = b->val.qval;
+    size_t q_len = queue_len(rem);
+    val_t *new_elem;
+
+    // return all in a but not in b -> remove all b from a
+    for (size_t i = 0; i < q_len; i++) {
+      new_elem = queue_at(rem, i);
+      if (!value_in(new_elem, a)) {
+        queue_enqueue(new, new_elem);
+      }
+    }
+
+    return value_create(new, QUEUE_TYPE);
   } else if (a->val_type == QUEUE_TYPE) {
     queue *new = queue_copy(a->val.qval);
     val_t *elem;
@@ -146,7 +160,8 @@ val_t *subtraction(val_t *a, val_t *b) {
     }
     return value_create(new, QUEUE_TYPE);
   } else if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
-    // TODO
+    return value_create(string_remove_chars(a->val.strval, b->val.strval),
+                        STRING_TYPE);
   } else if (a->val_type == STRING_TYPE) {
     string *new = string_copy(a->val.strval);
     string_remove_chars_from_end(new, val2int(b));
@@ -190,7 +205,7 @@ val_t *multiplication(val_t *a, val_t *b) {
     return value_create(NULL, NULL_TYPE);
 
   if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
-    // TODO
+    return value_create(queue_interleave(a->val.qval, b->val.qval), QUEUE_TYPE);
   } else if (a->val_type == QUEUE_TYPE) {
     queue *new = queue_copy(a->val.qval);
     queue_repeat(new, val2int(b));
@@ -200,7 +215,8 @@ val_t *multiplication(val_t *a, val_t *b) {
     queue_repeat(new, val2int(a));
     return value_create(new, QUEUE_TYPE);
   } else if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
-    // TODO
+    return value_create(string_interleave(a->val.strval, b->val.strval),
+                        STRING_TYPE);
   } else if (a->val_type == STRING_TYPE) {
     string *new = string_copy(a->val.strval);
     string_repeat(new, val2int(b));
@@ -243,13 +259,12 @@ val_t *division(val_t *a, val_t *b) {
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
-  // TODO
-  if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
-  } else if (a->val_type == QUEUE_TYPE) {
-  } else if (b->val_type == QUEUE_TYPE) {
-  } else if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
+  if (a->val_type == QUEUE_TYPE || b->val_type == QUEUE_TYPE ||
+      (b->val_type == STRING_TYPE && a->val_type != STRING_TYPE)) {
+    return subtraction(a, b);
   } else if (a->val_type == STRING_TYPE) {
-  } else if (b->val_type == STRING_TYPE) {
+    return value_create(string_split(a->val.strval, val2string(b)),
+                        STRING_TYPE);
   }
 
   if (a->val_type == BOOL_TYPE && b->val_type == BOOL_TYPE) {
@@ -277,7 +292,6 @@ val_t *division(val_t *a, val_t *b) {
 }
 
 val_t *power(val_t *a, val_t *b) {
-  // TODO  implement (also header, lexer, ...)
   if (DEBUG)
     printf("POWER: %s ^ %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
@@ -289,7 +303,6 @@ val_t *power(val_t *a, val_t *b) {
   if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
   } else if (a->val_type == QUEUE_TYPE) {
   } else if (b->val_type == QUEUE_TYPE) {
-  } else if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
   } else if (a->val_type == STRING_TYPE) {
   } else if (b->val_type == STRING_TYPE) {
   }

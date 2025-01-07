@@ -1,5 +1,6 @@
 #include "string.h"
 #include "queue.h"
+#include "utils.h"
 #include "value.h"
 
 #include <stdio.h>
@@ -112,6 +113,29 @@ void string_remove_chars_from_end(string *str, int amount) {
   str->length = new_len;
 }
 
+string *string_remove_chars(string *str, string *str2) {
+  string *new = string_copy(str);
+
+  int char_tbl[256] = {0};
+  char *src = string_get_chars(str);
+  char *dst = string_get_chars(new);
+  char *rem = string_get_chars(str2);
+
+  while (*rem) {
+    char_tbl[(unsigned char)*rem++] = 1;
+  }
+
+  while (*src) {
+    if (!char_tbl[(unsigned char)*src]) {
+      *dst++ = *src;
+    }
+    src++;
+  }
+
+  *dst = '\0';
+  return new;
+}
+
 void string_append_string(string *str1, string *str2) {
   if (!str2)
     return;
@@ -212,6 +236,16 @@ char *string_get_chars(string *str) {
 char *string_get_chars_at(string *str, size_t index) {
   index = calc_index(index, str->length);
   return &str->data[index];
+}
+
+string *string_interleave(string *str1, string *str2) {
+  string *new = string_create(NULL);
+  size_t max_len = max(string_len(str1), string_len(str2));
+  for (int i = 0; i < max_len; i++) {
+    string_append_char(new, string_get_char_at(str1, i));
+    string_append_char(new, string_get_char_at(str2, i));
+  }
+  return new;
 }
 
 int string_cmp(string *str1, string *str2) {

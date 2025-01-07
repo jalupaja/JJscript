@@ -18,6 +18,7 @@ void queue_append_at(queue *q1, queue *q2, int n);
 void *queue_dequeue_at(queue *q, int n);
 int queue_cmp(queue *q1, queue *q2);
 void *queue_at(queue *q, int n);
+queue *queue_interleave(queue *q1, queue *q2);
 string *queue_to_string(queue *q, string *(*to_string_func)(void *));
 void queue_print(queue *q, void (*print_func)(void *));
 

@@ -1,5 +1,6 @@
 #include "queue.h"
 #include "string.h"
+#include "utils.h"
 #include "value.h"
 
 #include <stdio.h>
@@ -219,6 +220,16 @@ int queue_cmp(queue *q1, queue *q2) {
 void *queue_at(queue *q, int n) {
   node *res = find_item(q, n);
   return res ? res->val : NULL;
+}
+
+queue *queue_interleave(queue *q1, queue *q2) {
+  size_t max_len = max(q1->size, q2->size);
+  queue *new = queue_create();
+  for (int i = 0; i < max_len; i++) {
+    queue_enqueue(new, queue_at(q1, i));
+    queue_enqueue(new, queue_at(q2, i));
+  }
+  return new;
 }
 
 string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
