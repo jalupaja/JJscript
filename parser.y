@@ -98,9 +98,9 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
         | _if EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_if, $2, $4, $6); }
-        | _while EXPR lcurly STMTS rcurly { $$ = node2(_while, $2, $4); }
-        | _for ID colon EXPR lcurly STMTS rcurly { $$ = node3(_for, $2, $4, $6); }
-        | _for lbrak ID colon EXPR rbrak lcurly STMTS rcurly { $$ = node3(_for, $3, $5, $8); }
+        | _while EXPR lcurly STMTS rcurly IFELSE { $$ = node3(_while, $2, $4, $6); }
+        | _for ID colon EXPR lcurly STMTS rcurly IFELSE { $$ = node4(_for, $2, $4, $6, $8); }
+        | _for lbrak ID colon EXPR rbrak lcurly STMTS rcurly IFELSE { $$ = node4(_for, $3, $5, $8, $10); }
         | lcurly STMTS rcurly { $$ = node1(lcurly, $2); /* local environment */ }
 
 PARAMS: PARAMS delim ID { queue_enqueue($1, $3); $$ = $1; }
@@ -654,11 +654,17 @@ val_t *ex(ast_t *t) {
             return value_create(NULL, NULL_TYPE);
         case _else:
             return ex(t->c[0]);
-        case _while:
+        case _while: {
+            val_t *ret = NULL;
             while (val2bool(ex(t->c[0]))) {
-                ex(t->c[1]);
+                ret = ex(t->c[1]);
             }
-            return value_create(NULL, NULL_TYPE);
+            // elif/else
+            if (!ret) {
+                ret = ex(t->c[2]);
+            }
+            return ret;
+        }
         case _for: {
             val_t *id_val = ex(t->c[0]);
             string *id = id_val->val.strval;
@@ -667,13 +673,17 @@ val_t *ex(ast_t *t) {
 
             size_t expr_len = value_len(expr);
             val_t *cur;
+            val_t *ret = NULL;
             for (size_t i = 0; i < expr_len; i++) {
                 cur = value_at(expr, i);
                 env_save(id, value_copy(cur));
-                ex(t->c[2]);
+                ret = ex(t->c[2]);
             }
-
-            return value_create(NULL, NULL_TYPE);
+            // elif/else
+            if (!ret) {
+                ret = ex(t->c[3]);
+            }
+            return ret;
         }
         default:
             // TODO ERROR

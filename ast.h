@@ -3,7 +3,7 @@
 
 #include "string.h"
 
-#define MC 3
+#define MC 4
 
 typedef struct ast_t ast_t;
 typedef struct val_t val_t;
@@ -26,6 +26,8 @@ ast_t *node1(int type, ast_t *c1);
 ast_t *node2(int type, ast_t *c1, ast_t *c2);
 
 ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3);
+
+ast_t *node4(int type, ast_t *c1, ast_t *c2, ast_t *c3, ast_t *c4);
 
 void ast_print(ast_t *t);
 

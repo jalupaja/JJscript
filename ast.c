@@ -66,6 +66,12 @@ ast_t *node3(int type, ast_t *c1, ast_t *c2, ast_t *c3) {
   return ret;
 }
 
+ast_t *node4(int type, ast_t *c1, ast_t *c2, ast_t *c3, ast_t *c4) {
+  ast_t *ret = node3(type, c1, c2, c3);
+  ret->c[3] = c4;
+  return ret;
+}
+
 void ast_print(ast_t *t) {
   if (!t)
     return;
