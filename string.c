@@ -54,6 +54,13 @@ string *string_copy(string *str) { return string_create(str->data); }
 
 size_t string_len(string *str) { return str->length; }
 
+string *string_at(string *str, long n) {
+  char chr = string_get_char_at(str, n);
+  string *new = string_create(NULL);
+  string_append_char(new, chr);
+  return new;
+}
+
 bool string_in(string *str1, string *str2) {
   return strstr(str2->data, str1->data) != NULL;
 }

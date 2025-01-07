@@ -281,21 +281,11 @@ val_t **value_ptr_at(val_t *val, long n) {
   // interpreted to return the value itself
   val_t **ret = NULL;
   if (!val) {
-    val_t *null_val = value_create(NULL, NULL_TYPE);
-    ret = &null_val;
   } else if (val->val_type == INT_TYPE) {
   } else if (val->val_type == FLOAT_TYPE) {
   } else if (val->val_type == BOOL_TYPE) {
   } else if (val->val_type == NULL_TYPE) {
-    val_t *null_val = value_create(NULL, NULL_TYPE);
-    ret = &null_val;
   } else if (val->val_type == STRING_TYPE) {
-    char chr = string_get_char_at(val->val.strval, n);
-    string *str = string_create(NULL);
-    string_append_char(str, chr);
-    // TODO change if I want to allow str[0] =...
-    val_t *string_val = value_create(str, STRING_TYPE);
-    ret = &string_val;
   } else if (val->val_type == QUEUE_TYPE) {
     ret = (val_t **)queue_ptr_at(val->val.qval, n);
   } else {
@@ -306,10 +296,15 @@ val_t **value_ptr_at(val_t *val, long n) {
 
 val_t *value_at(val_t *val, long n) {
   val_t **res = value_ptr_at(val, n);
-  if (res)
+  if (res) {
     return *res;
-  else
+  } else if (val->val_type == STRING_TYPE) {
+    // String needs some extra stuff...
+    string *str = string_at(val->val.strval, n);
+    return value_create(str, STRING_TYPE);
+  } else {
     return NULL;
+  }
 }
 
 void value_free(val_t *val) {
