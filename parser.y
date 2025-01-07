@@ -28,6 +28,8 @@ val_t *ex (ast_t *t);
 val_t *fun_call(val_t *id, queue *args);
 void opt_ast ( ast_t *t);
 
+ast_t *root;
+
 enum {
     STMTS = 10000,
     STMT,
@@ -49,7 +51,7 @@ enum {
 %token _id id_start <val> id_end <id> _id_eval
 %token _arr_create <val> _range _arr_call _arr
 %token <val> embed_lcurly
-%token _input _inline_expr _print _printl <val> val fun
+%token _input _inline_expr _print _printl _eval <val> val fun
 %token assign_id assign_fun eol delim
 %token lsquare rsquare lcurly rcurly
 
@@ -74,7 +76,7 @@ enum {
 
 %%
 
-S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); ex($1); }
+S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); root = $1; }
 
 STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS NON_STMT { $$ = node2(STMTS, $1, $2); }
@@ -92,6 +94,7 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | _printl lbrak rbrak { $$ = node1(_printl, NULL); }
     | _return lbrak rbrak { $$ = node1(_return, NULL); }
     | _return lbrak EXPR rbrak { $$ = node1(_return, $3); }
+    | _eval lbrak STRING rbrak { $$ = node1(_eval, $3); }
     | EXPR { $$ = node1(STMT, $1); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
@@ -193,6 +196,34 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
        };
 
 %%
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+
+extern int yyparse();
+extern int yylex();
+extern void yyerror(const char *s);
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+
+val_t *eval(string *str, bool suppress_errors) {
+    if (suppress_errors)
+        freopen("/dev/null", "w", stderr); // suprress errors... (yes. I know)
+    YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
+    val_t *res = NULL;
+
+    // Parse the input
+    if (yyparse() == 0) {
+        res = ex(root);
+        // ast_free(root); // TODO
+        yy_delete_buffer(buffer);
+    } else {
+        yy_delete_buffer(buffer);
+        res = NULL;
+    }
+    if (suppress_errors)
+        freopen("/dev/tty", "w", stderr); // restore stderr
+    return res;
+}
+
 // TODO external file
 string *join_embeds(queue *segments) {
     string *str = string_create(NULL);
@@ -256,7 +287,6 @@ val_t *ex(ast_t *t) {
         case '-': {
             if (t->c[0] == NULL) {
                 // -3 as number -> not an operation
-                printf("start\n");
                 long mul = -1;
                 val_t *mul_val = value_create(&mul, INT_TYPE);
                 val_t *res = multiplication(ex(t->c[1]), mul_val);
@@ -580,10 +610,22 @@ val_t *ex(ast_t *t) {
             return NULL;
         }
         case _input: {
+            string *str = string_read();
+            string_append_char(str, ';');
+            val_t *res = eval(str, true);
+            if (res) {
+                string_free(str);
+                return res;
+            } else {
+                string_remove_chars_from_end(str, 1);
+                return value_create(str, STRING_TYPE);
+            }
+            /*
             if (t->c[0]) {
                 value_print(ex(t->c[0]));
             }
             return value_read();
+            */
         }
         case _print: {
             val_t *val = ex(t->c[0]);
@@ -597,6 +639,17 @@ val_t *ex(ast_t *t) {
             }
             printf("\n");
             return value_create(NULL, NULL_TYPE);
+        }
+        case _eval: {
+            val_t *val = ex(t->c[0]);
+            string *str = val2string(val);
+            val_t *res = eval(str, false);
+            if (res) {
+                return res;
+            } else {
+                fprintf(stderr, "Parsing failed\n");
+                return value_create(NULL, NULL_TYPE);
+            }
         }
         case _len: {
             val_t *val = ex(t->c[0]);
@@ -816,4 +869,5 @@ int main (int argc, char **argv) {
         return 1;
     }
     yyparse();
+    ex(root);
 }

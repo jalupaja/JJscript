@@ -40,12 +40,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
 }
 
 val_t *value_read() {
-  string *str = string_create(NULL);
-
-  char ch;
-  while ((ch = getchar()) != '\n' && ch != EOF) {
-    string_append_char(str, (char)ch);
-  }
+  string *str = string_read();
   val_t *ret = string2val(str);
   string_free(str);
   return ret;

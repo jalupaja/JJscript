@@ -13,6 +13,7 @@ typedef struct {
 typedef struct queue queue;
 
 string *string_create(const char *init);
+string *string_read();
 string *string_copy(string *str);
 size_t string_len(string *str);
 bool string_in(string *str1, string *str2);

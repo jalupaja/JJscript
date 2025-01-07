@@ -55,6 +55,16 @@ string *string_create(const char *init) {
   return str;
 }
 
+string *string_read() {
+  string *str = string_create(NULL);
+
+  char ch;
+  while ((ch = getchar()) != '\n') {
+    string_append_char(str, (char)ch);
+  }
+  return str;
+}
+
 string *string_copy(string *str) { return string_create(str->data); }
 
 size_t string_len(string *str) { return str->length; }

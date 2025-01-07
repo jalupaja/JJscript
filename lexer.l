@@ -46,6 +46,7 @@ STR_SINGLE "'"
 MULTI_STR_SINGLE "'''"
 PRINTLN "printl"
 PRINT "print"
+EVAL "eval"
 LEN "len"
 SPLIT "split"
 RANDOM "rand"
@@ -118,6 +119,7 @@ EOL ";"
 {FOR}/{X}      { return _for; }
 {PRINT}/{X}    { return _print; }
 {PRINTLN}/{X}  { return _printl; }
+{EVAL}/{X}     { return _eval; }
 {LEN}/{X}      { return _len; }
 {SPLIT}/{X}    { return _split; }
 {RANDOM}/{X}   { return _random; }
