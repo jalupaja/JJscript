@@ -206,7 +206,7 @@ extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 
 val_t *eval(string *str, bool suppress_errors) {
     if (suppress_errors)
-        freopen("/dev/null", "w", stderr); // suprress errors... (yes. I know)
+        if(freopen("/dev/null", "w", stderr) == NULL); // restore stderr
     YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
     val_t *res = NULL;
 
@@ -220,7 +220,7 @@ val_t *eval(string *str, bool suppress_errors) {
         res = NULL;
     }
     if (suppress_errors)
-        freopen("/dev/tty", "w", stderr); // restore stderr
+        if(freopen("/dev/tty", "w", stderr) == NULL); // restore stderr
     return res;
 }
 

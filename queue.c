@@ -165,7 +165,7 @@ void queue_enqueue_at(queue *q, void *data, long n) {
 
   q->size++;
   if (DEBUG)
-    printf("Enqueued at position %d. New size: %zu\n", n, q->size);
+    printf("Enqueued at position %ld. New size: %zu\n", n, q->size);
 }
 
 void queue_append_at(queue *q1, queue *q2, long n) {
@@ -207,7 +207,7 @@ void *queue_dequeue_at(queue *q, long n) {
   free(res);
 
   if (DEBUG)
-    printf("Dequeued at position %d. New size: %zu\n", n, q->size);
+    printf("Dequeued at position %ld. New size: %zu\n", n, q->size);
   return data;
 }
 
