@@ -277,16 +277,15 @@ size_t value_len(val_t *val) {
 }
 
 val_t **value_ptr_at(val_t *val, long n) {
+  // a return value of NULL signals that there is no index. This should be
+  // interpreted to return the value itself
   val_t **ret = NULL;
   if (!val) {
     val_t *null_val = value_create(NULL, NULL_TYPE);
     ret = &null_val;
   } else if (val->val_type == INT_TYPE) {
-    ret = &val; // TODO maybe index of its string?
   } else if (val->val_type == FLOAT_TYPE) {
-    ret = &val; // TODO maybe index of its string?
   } else if (val->val_type == BOOL_TYPE) {
-    ret = &val; // TODO maybe something funnier?
   } else if (val->val_type == NULL_TYPE) {
     val_t *null_val = value_create(NULL, NULL_TYPE);
     ret = &null_val;
@@ -305,7 +304,13 @@ val_t **value_ptr_at(val_t *val, long n) {
   return ret;
 }
 
-val_t *value_at(val_t *val, long n) { return *value_ptr_at(val, n); }
+val_t *value_at(val_t *val, long n) {
+  val_t **res = value_ptr_at(val, n);
+  if (res)
+    return *res;
+  else
+    return NULL;
+}
 
 void value_free(val_t *val) {
 #ifndef NO_FREE

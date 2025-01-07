@@ -111,13 +111,12 @@ void env_save(val_t *id, val_t *val) {
           fprintf(stderr, "Found invalid index\n");
           break;
         }
-        // TODO wrong
         val_t **res = value_ptr_at(*to_save_to, *index);
-        printf("found value after index %ld\n", *index);
-        to_save_to = res;
+
+        if (res)
+          to_save_to = res;
       }
     }
-    printf("to_save_to: '%s'\n", string_get_chars(val2string(*to_save_to)));
     *to_save_to = val;
 
   } else {
@@ -142,10 +141,11 @@ void env_save(val_t *id, val_t *val) {
             fprintf(stderr, "Found invalid index\n");
             break;
           }
-          // // TODO wrong
+
           val_t **res = value_ptr_at(*to_save_to, *index);
-          // printf("found value after index %ld\n", *index);
-          to_save_to = res;
+
+          if (res)
+            to_save_to = res;
         }
         // save value
         *to_save_to = val;
