@@ -51,6 +51,33 @@ env_var_t *queue_search(queue *q, string *id) {
   return NULL;
 }
 
+val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
+  size_t q_len = queue_len(indexes);
+  for (size_t i = 0; i < q_len; i++) {
+    long *index = (long *)queue_at(indexes, i);
+    if (!index) {
+      fprintf(stderr, "Found invalid index\n");
+      break;
+    }
+
+    val_t **new_res = value_ptr_at(*res, *index);
+
+    if (new_res) {
+      res = new_res;
+    } else if ((*res)->val_type == STRING_TYPE) {
+      // TODO
+      if (new_val) {
+      } else {
+        // env_search
+        return value_create(string_at((*res)->val.strval, *index), STRING_TYPE);
+      }
+    }
+  }
+  if (new_val)
+    *res = new_val;
+  return *res;
+}
+
 env_var_t *env_search_all(string *id) {
   if (DEBUG)
     printf("env_search_all: %s\n", string_get_chars(id));
@@ -78,25 +105,10 @@ val_t *env_search(val_t *id) {
       val_t **res = &found->val;
 
       if (indexes) {
-        size_t q_len = queue_len(indexes);
-        for (size_t i = 0; i < q_len; i++) {
-          long *index = (long *)queue_at(indexes, i);
-          if (!index) {
-            fprintf(stderr, "Found invalid index\n");
-            break;
-          }
-          val_t **new_res = value_ptr_at(*res, *index);
-
-          if (new_res) {
-            res = new_res;
-          } else if ((*res)->val_type == STRING_TYPE) {
-            return value_create(string_at((*res)->val.strval, *index),
-                                STRING_TYPE);
-          }
-        }
+        return parse_indexes(res, indexes, NULL);
+      } else {
+        return *res;
       }
-
-      return *res;
     }
   }
   return NULL;
@@ -104,23 +116,6 @@ val_t *env_search(val_t *id) {
 
 env_var_t *env_search_top(string *id) {
   return (env_var_t *)queue_search(cur_env->vars, id);
-}
-
-val_t **parse_indexes(val_t **res, queue *indexes) {
-  size_t q_len = queue_len(indexes);
-  for (size_t i = 0; i < q_len; i++) {
-    long *index = (long *)queue_at(indexes, i);
-    if (!index) {
-      fprintf(stderr, "Found invalid index\n");
-      break;
-    }
-
-    val_t **new_res = value_ptr_at(*res, *index);
-
-    if (new_res)
-      res = new_res;
-  }
-  return res;
 }
 
 void env_save(val_t *id, val_t *val) {
@@ -143,9 +138,10 @@ void env_save(val_t *id, val_t *val) {
       if (DEBUG)
         printf("env_search found indexes\n");
 
-      res = parse_indexes(res, indexes);
+      parse_indexes(res, indexes, val);
+    } else {
+      *res = val;
     }
-    *res = val;
 
   } else {
     // enqueue new value
@@ -161,8 +157,7 @@ void env_save(val_t *id, val_t *val) {
         val_t *new_val = value_copy(cur->val);
         res = &new_val;
 
-        res = parse_indexes(res, indexes);
-        *res = val;
+        parse_indexes(res, indexes, val);
 
         env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
         new->id = id->val.strval;
