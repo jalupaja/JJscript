@@ -32,6 +32,7 @@ BLOCK_COMMENT_IN "/\*"
 BLOCK_COMMENT_OUT "\*/"
 OCTAL -?[0-7]+
 NUM   [0-9]+
+DECIMAL -?[0-9]+
 FP  -?({NUM}\.{NUM}f?|{NUM}\.f?|\.{NUM}f?|{NUM}f)
 BOOLEAN "true"|"false"
 NIL "NONE"
@@ -123,8 +124,8 @@ EOL ";"
 {INPUT}        { return _input; }
 {RETURN}       { return _return; }
 {IN}           { return _in; }
-{OCTAL}        { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* OCTAL */ }
-{HEX}          { long v = (long)strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
+{DECIMAL}      { long v = strtol(yytext, NULL, 0); yylval.val = value_create(&v, INT_TYPE); return val; /* DECIMAL */ }
+{HEX}          { long v = strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
 {FP}           { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
 {BOOLEAN}      { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
 {NIL}          { yylval.val = value_create(NULL, NULL_TYPE); return val; }

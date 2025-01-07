@@ -91,7 +91,11 @@ val_t *string2val(string *str) {
   char *end_ptr;
 
   if (!ret) {
+#ifdef USE_OCTAL
     long int_val = strtol(chars, &end_ptr, 8); // OCTAL
+#else
+    long int_val = strtol(chars, &end_ptr, 0);
+#endif
     if (*end_ptr == '\0') {
       ret = value_create(&int_val, INT_TYPE);
     }
@@ -156,11 +160,15 @@ string *val2string(val_t *val) {
   switch (val->val_type) {
   case INT_TYPE: {
     char buf[32];
-    // Apparently printf can't print negative numbers
+#ifdef USE_OCTAL
+    // Apparently printf can't print negative octal numbers
     if (val->val.intval < 0)
       snprintf(buf, sizeof(buf), "-%o", -(int)val->val.intval); // OCTAL
     else
       snprintf(buf, sizeof(buf), "%o", (int)val->val.intval); // OCTAL
+#else
+    snprintf(buf, sizeof(buf), "%ld", val->val.intval);
+#endif
     return string_create(buf);
   }
   case FLOAT_TYPE: {
