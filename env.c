@@ -69,7 +69,10 @@ val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
       if (new_val) {
       } else {
         // env_search
-        return value_create(string_at((*res)->val.strval, *index), STRING_TYPE);
+        string *str_res = string_create(NULL);
+        string_append_char(str_res,
+                           string_get_char_at((*res)->val.strval, *index));
+        return value_create(str_res, STRING_TYPE);
       }
     }
   }

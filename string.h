@@ -15,7 +15,6 @@ typedef struct queue queue;
 string *string_create(const char *init);
 string *string_copy(string *str);
 size_t string_len(string *str);
-string *string_at(string *str, long n);
 bool string_in(string *str1, string *str2);
 queue *string_split(string *str, string *delim);
 void string_append_char(string *str, const char suffix);
