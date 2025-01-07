@@ -1,6 +1,4 @@
 %{
-/* TODO
-*/
 
 #include "string.h"
 #include "queue.h"
@@ -18,6 +16,7 @@ void renew_str() {
     cur_str = string_create(NULL);
 }
 
+// {X} is "not in ID_PART" because my ID parsing structure needs uses shorter strings and therefore the variable print_me would result in a lexer error
 %}
 
 %x EMBED
@@ -38,6 +37,7 @@ BOOLEAN "true"|"false"
 NIL "NONE"
 ID_START [a-zA-Z\_]
 ID_PART [a-zA-Z\_0-9]
+X [^a-zA-Z\_0-9$]
 HEX_NUM ([1-9a-fA-F][0-9a-fA-F]*|0)
 HEX 0x{HEX_NUM}
 STR_DOUBLE "\""
@@ -111,24 +111,24 @@ EOL ";"
 <STRING_DOUBLE,STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
 {DELIMITER}    { return delim; }
-{IF}           { return _if; }
-{ELIF}         { return _elif; }
-{ELSE}         { return _else; }
-{WHILE}        { return _while; }
-{FOR}          { return _for; }
-{PRINT}        { return _print; }
-{PRINTLN}      { return _printl; }
-{LEN}          { return _len; }
-{SPLIT}        { return _split; }
-{RANDOM}       { return _random; }
-{INPUT}        { return _input; }
+{IF}{X}        { return _if; }
+{ELIF}{X}      { return _elif; }
+{ELSE}{X}      { return _else; }
+{WHILE}{X}     { return _while; }
+{FOR}{X}       { return _for; }
+{PRINT}{X}     { return _print; }
+{PRINTLN}{X}   { return _printl; }
+{LEN}{X}       { return _len; }
+{SPLIT}{X}     { return _split; }
+{RANDOM}{X}    { return _random; }
+{INPUT}{X}     { return _input; }
 {RETURN}       { return _return; }
-{IN}           { return _in; }
+{IN}{X}        { return _in; }
 {DECIMAL}      { long v = strtol(yytext, NULL, 0); yylval.val = value_create(&v, INT_TYPE); return val; /* DECIMAL */ }
 {HEX}          { long v = strtol(yytext, NULL, 8); yylval.val = value_create(&v, INT_TYPE); return val; /* HEX */ }
 {FP}           { double v = atof(yytext); yylval.val = value_create(&v, FLOAT_TYPE); return val; }
-{BOOLEAN}      { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
-{NIL}          { yylval.val = value_create(NULL, NULL_TYPE); return val; }
+{BOOLEAN}{X}   { bool v = strcmp(yytext, "true") == 0; yylval.val = value_create(&v, BOOL_TYPE); return val; }
+{NIL}{X}       { yylval.val = value_create(NULL, NULL_TYPE); return val; }
 {EOL}          { return eol; }
 {DOUBLE_COLON} { return double_colon; }
 {COLON}        { return colon; }
