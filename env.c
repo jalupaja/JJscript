@@ -65,8 +65,12 @@ val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
     if (new_res) {
       res = new_res;
     } else if ((*res)->val_type == STRING_TYPE) {
-      // TODO
       if (new_val) {
+        // env_save
+        string *replace = val2string(new_val);
+        string_replace_at((*res)->val.strval, *index, replace);
+        string_free(replace);
+        new_val = NULL;
       } else {
         // env_search
         string *str_res = string_create(NULL);

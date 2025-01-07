@@ -300,7 +300,8 @@ val_t *value_at(val_t *val, long n) {
     return *res;
   } else if (val->val_type == STRING_TYPE) {
     // String needs some extra stuff...
-    string *str = string_at(val->val.strval, n);
+    string *str = string_create(NULL);
+    string_append_char(str, string_get_char_at((*res)->val.strval, n));
     return value_create(str, STRING_TYPE);
   } else {
     return NULL;

@@ -21,6 +21,7 @@ void string_append_char(string *str, const char suffix);
 void string_append_chars(string *str, const char *suffix);
 void string_remove_chars_from_beginning(string *str, int amount);
 void string_remove_chars_from_end(string *str, int amount);
+void string_replace_at(string *str, long index, string *replace);
 string *string_remove_chars(string *str, string *str2);
 void string_append_string(string *str1, string *str2);
 void string_prefix_chars(const char *prefix, string *str2);

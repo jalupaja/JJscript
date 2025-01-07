@@ -136,6 +136,32 @@ string *string_remove_chars(string *str, string *str2) {
   return new;
 }
 
+void string_replace_at(string *str, long index, string *replace) {
+  if (!str || !replace) {
+    fprintf(stderr, "Invalid input: null string or replacement.\n");
+    return;
+  }
+
+  index = calc_index(index, str->length);
+
+  size_t new_length = str->length - 1 + replace->length;
+
+  if (new_length >= str->capacity) {
+    while (new_length >= str->capacity) {
+      str->capacity *= 2;
+    }
+    str->data = (char *)realloc(str->data, str->capacity);
+  }
+
+  memmove(str->data + index + replace->length, str->data + index + 1,
+          str->length - index - 1);
+
+  memcpy(str->data + index, replace->data, replace->length);
+
+  str->length = new_length;
+  str->data[str->length] = '\0';
+}
+
 void string_append_string(string *str1, string *str2) {
   if (!str2)
     return;
