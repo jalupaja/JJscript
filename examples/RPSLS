@@ -1,16 +1,19 @@
 options = ["rock", "paper", "scissors", "lizard", "spock"];
 
-// TODO rename Calculation trainer
+is_num = {(inp)
+    return((inp - 1 + 1) == inp);
+}
+
 check_win = {(p1, p2)
     if p1 == p2 {
         return(-1);
     }
 
-    if (p1 == "rock" & p2 in ["scissors", "lizard"])   |
-        (p1 == "paper" & p2 in ["rock", "spock"])      |
-        (p1 == "scissors" & p2 in ["paper", "lizard"]) |
-        (p1 == "lizard" & p2 in ["spock", "paper"])    |
-        (p1 == "spock" & p2 in ["scissors", "rock"]) {
+    if (p1 == "rock" & (p2 in ["scissors", "lizard"]))   |
+        (p1 == "paper" & (p2 in ["rock", "spock"]))      |
+        (p1 == "scissors" & (p2 in ["paper", "lizard"])) |
+        (p1 == "lizard" & (p2 in ["spock", "paper"]))    |
+        (p1 == "spock" & (p2 in ["scissors", "rock"])) {
         return(0);
     } else {
         return(1);
@@ -37,15 +40,11 @@ round = {()
     choice2 = input("Choose one: ${options}\n: ");
 
     // check if choice2 is a string in options
-    if (!choice2 in options) {
-        // bound checking. The programming language won't fail but it will look wrong.
-        o_len = len(options);
-        if (choice2 <= 0 | choice2 > o_len) { // use human indexing
-            printl("""${choice2}"" is not a valid choice!");
-            return();
-        } else {
-            choice2 = options[choice2 - 1];
-        }
+    if (is_num(choice2)) {
+        choice2 = options[choice2 - 1];
+    } elif (!choice2 in options) {
+        printl("Invalid option");
+        return();
     }
 
     if (win_next_round) {
