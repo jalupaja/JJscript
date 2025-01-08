@@ -231,8 +231,6 @@ val_t *eval(string *str, bool suppress_errors) {
 string *join_embeds(queue *segments) {
     string *str = string_create(NULL);
 
-    env_push();
-
     string *prefix;
     ast_t *emb;
     val_t *res;
@@ -251,7 +249,6 @@ string *join_embeds(queue *segments) {
         string_append_string(str, suffix);
     }
 
-    env_pop();
     return str;
 }
 
