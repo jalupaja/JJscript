@@ -874,7 +874,7 @@ int main (int argc, char **argv) {
 
     if (error_count > 0) {
         fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
-        fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n");
+        fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
     } else {
         ex(root);
     }

@@ -16,25 +16,32 @@ string *cur_str = NULL;
 void renew_str() {
     cur_str = string_create(NULL);
 }
-int yycolumn = 1;
 int cur_line_num, cur_chr;
 string *prev_line = NULL;
 string *cur_line = NULL;
-int error_count;
+int error_count = 0;
+
+void _unput();
 
 void print_error(const char *msg) {
     error_count++;
-    char *p_line = string_get_chars(prev_line);
     char *c_line = string_get_chars(cur_line);
-    int cur_chr_num = cur_chr - 1;
+    int _cur_chr_num = cur_chr - yyleng;
+    int _cur_line_num = cur_line_num;
+    bool eol_error = false;
 
-    fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", cur_line_num, cur_chr_num, msg);
+    if (_cur_chr_num == 0) {
+        eol_error = true;
+        _cur_line_num--;
+        c_line = string_get_chars(prev_line);
+        _cur_chr_num = string_len(prev_line);
+    }
 
-    if (cur_line_num > 1)
-        fprintf(stderr, "%s\n", p_line);
-    fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", cur_chr_num, c_line, yyleng, c_line + cur_chr_num, c_line + cur_chr_num + yyleng);
+    fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num, msg);
 
-    for (int i = 0; i < cur_chr_num; i++) {
+    fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
+
+    for (int i = 0; i < _cur_chr_num; i++) {
         if (c_line[i] == '\t') {
             fprintf(stderr, "\t");
         } else {
@@ -47,8 +54,10 @@ void print_error(const char *msg) {
         fprintf(stderr, "^");
     }
     fprintf(stderr, RESET_COLOR "\n");
+    if (eol_error)
+        fprintf(stderr, "%s\n", string_get_chars(cur_line));
 
-    fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, cur_line_num, cur_chr_num);
+    fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num);
 
 }
 
@@ -65,12 +74,17 @@ void save_line(char *line) {
     }
 
     cur_line_num++;
-    printf("new line\n");
     cur_chr = 0;
     string_append_chars(cur_line, line);
 }
 
-#define YY_USER_ACTION cur_chr++;
+#define YY_USER_ACTION cur_chr+=yyleng;
+/*
+#define YY_USER_ACTION \
+    printf("Matched token: '%s', yyleng: %d, cur_chr before: %d", yytext, yyleng, cur_chr); \
+    cur_chr += yyleng; \
+    printf("-> %d\n", cur_chr);
+    */
 
 // {X} is "not in ID_PART" because my ID parsing structure needs uses shorter strings and therefore the variable print_me would result in a lexer error
 %}
@@ -141,7 +155,7 @@ EOL ";"
 %option noyywrap noinput stack noyy_top_state
 %%
 
-^.*$ {  save_line(yytext);  REJECT; }
+^.*$ { save_line(yytext);  REJECT; }
 
 {REVERSE_LINE_COMMENT} { /* REVERSE LINE COMMENT */ }
 {LINE_COMMENT} { /* LINE COMMENT */ }
@@ -215,7 +229,7 @@ EOL ";"
 {ID_START} { yy_push_state(YYSTATE); BEGIN(ID); renew_str(); string_append_chars(cur_str, yytext); return id_start; }
 <ID>{ID_PART} { string_append_chars(cur_str, yytext); }
 <ID>"${" { yy_push_state(YYSTATE); BEGIN(INITIAL); yylval.val = value_create(cur_str, STRING_TYPE); return embed_lcurly; }
-<ID>. { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); unput(*yytext); return id_end; }
+<ID>. { yy_pop_state(); yylval.val = value_create(cur_str, STRING_TYPE); _unput(); return id_end; }
 
 [ \n\t]
 
@@ -223,3 +237,9 @@ EOL ";"
 
 
 %%
+
+void _unput() {
+    cur_chr-=yyleng;
+    unput(*yytext);
+}
+
