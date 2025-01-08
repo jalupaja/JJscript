@@ -611,6 +611,9 @@ val_t *ex(ast_t *t) {
             return NULL;
         }
         case _input: {
+            if (t->c[0]) {
+                value_print(ex(t->c[0]));
+            }
             string *str = string_read();
             string_append_char(str, ';');
             val_t *res = eval(str, true);
@@ -622,9 +625,6 @@ val_t *ex(ast_t *t) {
                 return value_create(str, STRING_TYPE);
             }
             /*
-            if (t->c[0]) {
-                value_print(ex(t->c[0]));
-            }
             return value_read();
             */
         }
