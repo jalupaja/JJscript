@@ -16,7 +16,7 @@ string *cur_str = NULL;
 void renew_str() {
     cur_str = string_create(NULL);
 }
-int cur_line_num, cur_chr;
+int prev_line_num, cur_line_num, cur_chr;
 string *prev_line = NULL;
 string *cur_line = NULL;
 int error_count = 0;
@@ -32,13 +32,17 @@ void print_error(const char *msg) {
     bool eol_error = false;
 
     if (!parsing_finished) {
-        if (_cur_chr_num == 0) {
-            eol_error = true;
-            _cur_line_num--;
-            yyleng = 1;
-            c_line = string_get_chars(prev_line);
-            _cur_chr_num = string_len(prev_line);
-        }
+        if (_cur_chr_num == 0 && strstr(msg, "expecting eol") != NULL) {
+                // MISSING EOL ERROR
+                eol_error = true;
+                _cur_line_num = prev_line_num;
+                yyleng = 1;
+                _cur_chr_num = string_len(prev_line);
+                string_append_char(prev_line, ';'); // manually add the missing ';';
+                c_line = string_get_chars(prev_line);
+                msg = "syntax error, missing End Of Line character"; // custom message
+                yytext = ";";
+        }      
 
         fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num, msg);
 
@@ -57,8 +61,6 @@ void print_error(const char *msg) {
             fprintf(stderr, "^");
         }
         fprintf(stderr, RESET_COLOR "\n");
-        if (eol_error)
-            fprintf(stderr, "%s\n", string_get_chars(cur_line));
 
         fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num);
     } else {
@@ -87,10 +89,15 @@ void save_line(char *line) {
         // first setup
         cur_line = string_create(NULL);
         prev_line = string_create(NULL);
+        prev_line_num = 0;
         cur_line_num = 0;
     } else {
-        string_clear(prev_line);
-        string_append_string(prev_line, cur_line);
+        if (string_cmp_chars(cur_line, "")) {
+            // only save if cur_line is not empty for better EOL errors
+            string_clear(prev_line);
+            string_append_string(prev_line, cur_line);
+            prev_line_num = cur_line_num;
+        }
         string_clear(cur_line);
     }
 
