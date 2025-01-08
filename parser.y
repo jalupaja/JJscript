@@ -6,6 +6,7 @@
 #include "value_calc.h"
 #include "env.h"
 #include "ast.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -15,12 +16,20 @@
 
 #define DEBUG 0
 
-int yydebug=0;
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+
+extern int yyparse();
+extern int yylex();
+extern void yyerror(const char *s);
+extern void print_error(const char *msg);
+extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern FILE *yyin;
-int yylex (void);
+extern int error_count;
+
+int yydebug=0;
 void yyerror (const char *msg) {
-    fprintf(stderr, "Parse error: %s\n", msg);
-    exit(EXIT_FAILURE);
+    print_error(msg);
 }
 
 typedef struct ast_t ast_t;
@@ -35,6 +44,7 @@ enum {
     STMT,
 };
 %}
+%define parse.error verbose
 
 %union {
     string *id;
@@ -42,8 +52,6 @@ enum {
     ast_t *ast;
     queue *queue;
 }
-
-%define parse.error detailed
 
 %token _if _elif _else _while _for
 %token _return
@@ -196,13 +204,6 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
        };
 
 %%
-typedef struct yy_buffer_state *YY_BUFFER_STATE;
-
-extern int yyparse();
-extern int yylex();
-extern void yyerror(const char *s);
-extern YY_BUFFER_STATE yy_scan_string(const char *str);
-extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 
 val_t *eval(string *str, bool suppress_errors) {
     if (suppress_errors)
@@ -861,6 +862,7 @@ void opt_ast(ast_t *t) {
 
 int main (int argc, char **argv) {
     srand(time(NULL));
+    error_count = 0;
 
     env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
@@ -869,5 +871,11 @@ int main (int argc, char **argv) {
         return 1;
     }
     yyparse();
-    ex(root);
+
+    if (error_count > 0) {
+        fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
+        fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n");
+    } else {
+        ex(root);
+    }
 }

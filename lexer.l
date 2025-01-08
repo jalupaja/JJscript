@@ -5,6 +5,7 @@
 #include "value.h"
 #include "ast.h"
 #include "parser.tab.h"
+#include "utils.h"
 
 #include <stdbool.h>
 
@@ -15,6 +16,61 @@ string *cur_str = NULL;
 void renew_str() {
     cur_str = string_create(NULL);
 }
+int yycolumn = 1;
+int cur_line_num, cur_chr;
+string *prev_line = NULL;
+string *cur_line = NULL;
+int error_count;
+
+void print_error(const char *msg) {
+    error_count++;
+    char *p_line = string_get_chars(prev_line);
+    char *c_line = string_get_chars(cur_line);
+    int cur_chr_num = cur_chr - 1;
+
+    fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", cur_line_num, cur_chr_num, msg);
+
+    if (cur_line_num > 1)
+        fprintf(stderr, "%s\n", p_line);
+    fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", cur_chr_num, c_line, yyleng, c_line + cur_chr_num, c_line + cur_chr_num + yyleng);
+
+    for (int i = 0; i < cur_chr_num; i++) {
+        if (c_line[i] == '\t') {
+            fprintf(stderr, "\t");
+        } else {
+            fprintf(stderr, " ");
+        }
+    }
+
+    fprintf(stderr, RED_COLOR BOLD);
+    for (int i = 0; i < yyleng; i++) {
+        fprintf(stderr, "^");
+    }
+    fprintf(stderr, RESET_COLOR "\n");
+
+    fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, cur_line_num, cur_chr_num);
+
+}
+
+void save_line(char *line) {
+    if (!cur_line) {
+        // first setup
+        cur_line = string_create(NULL);
+        prev_line = string_create(NULL);
+        cur_line_num = 0;
+    } else {
+        string_clear(prev_line);
+        string_append_string(prev_line, cur_line);
+        string_clear(cur_line);
+    }
+
+    cur_line_num++;
+    printf("new line\n");
+    cur_chr = 0;
+    string_append_chars(cur_line, line);
+}
+
+#define YY_USER_ACTION cur_chr++;
 
 // {X} is "not in ID_PART" because my ID parsing structure needs uses shorter strings and therefore the variable print_me would result in a lexer error
 %}
@@ -84,6 +140,8 @@ EOL ";"
 
 %option noyywrap noinput stack noyy_top_state
 %%
+
+^.*$ {  save_line(yytext);  REJECT; }
 
 {REVERSE_LINE_COMMENT} { /* REVERSE LINE COMMENT */ }
 {LINE_COMMENT} { /* LINE COMMENT */ }
@@ -161,7 +219,7 @@ EOL ";"
 
 [ \n\t]
 
-.   { printf("LEXER: UNKNOWN: %s\n", yytext); }
+.   { print_error("Unexpected character"); }
 
 
 %%
