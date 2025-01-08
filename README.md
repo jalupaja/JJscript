@@ -1,16 +1,21 @@
-# lang
-> a bs programming language, built for the purpose of building a programming language
+# JJscript
+> a bs programming language, built for the purpose of building a programming language (and learning how to)
 
 ## "Features"
 
 ### environments
+- variables designed outside of functions are considered global
 - local environments using `{ ... }`
-- local variables
 - functions using `id = { ... }` or `id = {(ARGS) ... }`
 
-### datatypes
-- integer (only octal and hex (using 0x...))
+### Variables
+- dynamically typed: `x = 1.3; x = "abc";`
+- dynamically named: `x${x} = true; printl(xabc)`
+
+#### datatypes
+- integer (Hex values using 0x...)
 - float
 - string
 - NONE
 - bool ("true"|"false")
+- lists using \[\]

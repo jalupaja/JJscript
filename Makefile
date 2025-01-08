@@ -4,7 +4,7 @@ LDFLAGS=-lm
 
 LEXER=lexer
 PARSER=parser
-PRJ=prog
+PRJ=JJscript
 
 $(PRJ): $(PARSER).tab.o $(LEXER).lex.o ast.o string.o queue.o value.o value_calc.o env.o function.o utils.o
 	$(CC) -o $@ $^ $(LDFLAGS)
