@@ -1,10 +1,25 @@
+g = 0;
+printl("global env: g = ${g}");
 
-v = 1;
-printl("outside env: ${v}");
 {
-    printl("inside env: ${v}");
-    v += 2;
-    printl("changed value");
-    printl("inside env: ${v}");
+    o = 10;
+    printl("outer env: g = ${g}, o = ${o}");
+
+    g++;
+    printl("changed value of g");
+    printl("outer env: g = ${g}, o = ${o}");
+
+    {
+        i = 100;
+        printl("inside env: g = ${g}, i = ${i}");
+
+        g++;
+        i++;
+
+        printl("changed values of g, i");
+        printl("inside env: g = ${g}, i = ${i}");
+    }
+    printl("outer env: g = ${g}, o = ${o}");
 }
-print("outside env: ${"test"}.");
+
+printl("global env: g = ${g}");
