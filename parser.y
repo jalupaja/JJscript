@@ -625,12 +625,12 @@ val_t *ex(ast_t *t) {
             string *str = string_read();
             string_append_char(str, ';');
             val_t *res = eval(str, true);
-            if (res) {
-                string_free(str);
-                return res;
-            } else {
+            if (!res || res->val_type == NULL_TYPE) {
                 string_remove_chars_from_end(str, 1);
                 return value_create(str, STRING_TYPE);
+            } else {
+                string_free(str);
+                return res;
             }
             /*
             return value_read();
