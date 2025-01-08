@@ -20,6 +20,7 @@ int cur_line_num, cur_chr;
 string *prev_line = NULL;
 string *cur_line = NULL;
 int error_count = 0;
+bool parsing_finished = false;
 
 void _unput();
 
@@ -30,34 +31,54 @@ void print_error(const char *msg) {
     int _cur_line_num = cur_line_num;
     bool eol_error = false;
 
-    if (_cur_chr_num == 0) {
-        eol_error = true;
-        _cur_line_num--;
-        c_line = string_get_chars(prev_line);
-        _cur_chr_num = string_len(prev_line);
-    }
-
-    fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num, msg);
-
-    fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
-
-    for (int i = 0; i < _cur_chr_num; i++) {
-        if (c_line[i] == '\t') {
-            fprintf(stderr, "\t");
-        } else {
-            fprintf(stderr, " ");
+    if (!parsing_finished) {
+        if (_cur_chr_num == 0) {
+            eol_error = true;
+            _cur_line_num--;
+            yyleng = 1;
+            c_line = string_get_chars(prev_line);
+            _cur_chr_num = string_len(prev_line);
         }
-    }
 
-    fprintf(stderr, RED_COLOR BOLD);
-    for (int i = 0; i < yyleng; i++) {
-        fprintf(stderr, "^");
-    }
-    fprintf(stderr, RESET_COLOR "\n");
-    if (eol_error)
-        fprintf(stderr, "%s\n", string_get_chars(cur_line));
+        fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num, msg);
 
-    fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num);
+        fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
+
+        for (int i = 0; i < _cur_chr_num; i++) {
+            if (c_line[i] == '\t') {
+                fprintf(stderr, "\t");
+            } else {
+                fprintf(stderr, " ");
+            }
+        }
+
+        fprintf(stderr, RED_COLOR BOLD);
+        for (int i = 0; i < yyleng; i++) {
+            fprintf(stderr, "^");
+        }
+        fprintf(stderr, RESET_COLOR "\n");
+        if (eol_error)
+            fprintf(stderr, "%s\n", string_get_chars(cur_line));
+
+        fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num);
+    } else {
+        _cur_chr_num = string_len(prev_line);
+
+        fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ": %s\n", msg);
+
+        fprintf(stderr, BOLD RED_COLOR "%.*s" "%.*s" "%s\n" BOLD RESET_COLOR, _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
+
+        fprintf(stderr, RED_COLOR BOLD);
+        int t_len = yyleng + strlen(c_line + yyleng);
+        for (int i = 0; i < t_len; i++) {
+            fprintf(stderr, "^");
+        }
+        fprintf(stderr, RESET_COLOR "\n");
+        if (eol_error)
+            fprintf(stderr, "%s\n", string_get_chars(cur_line));
+
+        fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR "\n\n", msg, yyleng, yytext);
+    }
 
 }
 

@@ -26,6 +26,7 @@ extern YY_BUFFER_STATE yy_scan_string(const char *str);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern FILE *yyin;
 extern int error_count;
+extern bool parsing_finished;
 
 int yydebug=0;
 void yyerror (const char *msg) {
@@ -863,6 +864,7 @@ void opt_ast(ast_t *t) {
 int main (int argc, char **argv) {
     srand(time(NULL));
     error_count = 0;
+    parsing_finished = false;
 
     env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
@@ -871,6 +873,7 @@ int main (int argc, char **argv) {
         return 1;
     }
     yyparse();
+    parsing_finished = true;
 
     if (error_count > 0) {
         fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
