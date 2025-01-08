@@ -8,6 +8,8 @@
 
 #define DEBUG 0
 
+void print_error(const char *);
+
 env_t *cur_env = NULL;
 
 void env_push() {
@@ -26,7 +28,7 @@ void env_free(env_t *env) {
   queue_free(env->vars);
   free(env);
 #else
-  printf("env_free() (DISABLED)\n");
+  fprintf(stderr, "env_free() (DISABLED)\n");
 #endif
 }
 
@@ -56,7 +58,7 @@ val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
   for (size_t i = 0; i < q_len; i++) {
     long *index = (long *)queue_at(indexes, i);
     if (!index) {
-      fprintf(stderr, "Found invalid index\n");
+      print_error("Invalid index");
       break;
     }
 

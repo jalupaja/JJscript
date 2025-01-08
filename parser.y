@@ -207,6 +207,7 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
 %%
 
 val_t *eval(string *str, bool suppress_errors) {
+    parsing_finished = false;
     if (suppress_errors)
         if(freopen("/dev/null", "w", stderr) == NULL); // restore stderr
     YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
@@ -223,10 +224,10 @@ val_t *eval(string *str, bool suppress_errors) {
     }
     if (suppress_errors)
         if(freopen("/dev/tty", "w", stderr) == NULL); // restore stderr
+    parsing_finished = true;
     return res;
 }
 
-// TODO external file
 string *join_embeds(queue *segments) {
     string *str = string_create(NULL);
 
@@ -516,8 +517,9 @@ val_t *ex(ast_t *t) {
             if (step <= 0) {
                 return value_create(queue_create(), QUEUE_TYPE);
             } else if (val2int(left) > val2int(right)) {
-                fprintf(stderr, "The start of the range can't be higher then the end.");
-                return value_create(NULL, NULL_TYPE);
+                val_t *tmp = left;
+                left = right;
+                right = tmp;
             }
 
             val_t *res;
@@ -552,7 +554,10 @@ val_t *ex(ast_t *t) {
 
             val_t *cur = env_search(id);
             if (!cur || cur->val_type != FUNCTION_TYPE) {
-                fprintf(stderr, "Error: Undefined or invalid function %s\n", string_get_chars(id->val.strval));
+                string *err_str = string_create("Undefined function ");
+                string_append_string(err_str, id->val.strval);
+                print_error(string_get_chars(err_str));
+                string_free(err_str);
                 return value_create(NULL, NULL_TYPE);
             }
 
@@ -586,7 +591,7 @@ val_t *ex(ast_t *t) {
                 queue *segments = t->val->val.qval;
                 str = join_embeds(segments);
             } else {
-                printf("ERROR in _id. This can't happen\n");
+                print_error("Invalid ID. This can't happen");
                 return value_create(NULL, NULL_TYPE);
             }
 
@@ -599,8 +604,10 @@ val_t *ex(ast_t *t) {
             if (cur) {
                 return cur;
             } else {
-                // TODO maybe crash if id is not assigned yet?
-                fprintf(stderr, "ID '%s' not found!\n", string_get_chars(id->val.strval));
+                string *err_str = string_create("Undefined variable ");
+                string_append_string(err_str, id->val.strval);
+                print_error(string_get_chars(err_str));
+                string_free(err_str);
                 return value_create(NULL, NULL_TYPE);
             }
         }
@@ -649,7 +656,7 @@ val_t *ex(ast_t *t) {
             if (res) {
                 return res;
             } else {
-                fprintf(stderr, "Parsing failed\n");
+                print_error("Parsing failed");
                 return value_create(NULL, NULL_TYPE);
             }
         }
@@ -756,8 +763,7 @@ val_t *ex(ast_t *t) {
             return ret;
         }
         default:
-            // TODO ERROR
-            printf("Unsupported node type %d\n", t->type);
+            print_error("Unsupported node");
             break;
     }
 
@@ -772,7 +778,10 @@ val_t *fun_call(val_t *id, queue *args) {
 
   if (!cur || cur->val_type != FUNCTION_TYPE) {
     // TODO actual error. also below
-    printf("Error: '%s' is not a function \n", string_get_chars(id->val.strval));
+    string *err_str = string_create("Invalid function ");
+    string_append_string(err_str, id->val.strval);
+    print_error(string_get_chars(err_str));
+    string_free(err_str);
     return value_create(NULL, NULL_TYPE);
   }
 
@@ -783,9 +792,18 @@ val_t *fun_call(val_t *id, queue *args) {
 
   size_t p_len = queue_len(fun->params);
   if (queue_len(args) != p_len) {
-    printf("Error: Function '%s' expected %zd arguments but got %zd\n",
-           string_get_chars(id->val.strval), p_len, queue_len(args));
-    // return value_create(NULL, NULL_TYPE);
+    char buf[32];
+    string *err_str = string_create("Function '");
+    string_append_string(err_str, id->val.strval);
+    string_append_chars(err_str, "' expected ");
+    snprintf(buf, sizeof(buf), "%ld", p_len);
+    string_append_chars(err_str, buf);
+    string_append_chars(err_str, " arguments but got ");
+    snprintf(buf, sizeof(buf), "%ld", queue_len(args));
+    string_append_chars(err_str, buf);
+    print_error(string_get_chars(err_str));
+    string_free(err_str);
+    return value_create(NULL, NULL_TYPE);
   }
 
   // save args to env
@@ -864,14 +882,19 @@ void opt_ast(ast_t *t) {
 int main (int argc, char **argv) {
     srand(time(NULL));
     error_count = 0;
-    parsing_finished = false;
+    parsing_finished = true;
 
     env_push(); // create main environment
 	yyin = fopen(argv[1], "r");
     if (!yyin) {
-        fprintf(stderr, "File '%s' not found!\n", argv[1]);
+        string *err_str = string_create("File '");
+        string_append_chars(err_str, argv[1]);
+        string_append_chars(err_str, "' not found");
+        print_error(string_get_chars(err_str));
+        string_free(err_str);
         return 1;
     }
+    parsing_finished = false;
     yyparse();
     parsing_finished = true;
 

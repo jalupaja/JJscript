@@ -8,6 +8,8 @@
 
 #define DEBUG 0
 
+void print_error(const char *);
+
 typedef struct node {
   void *val;
   struct node *next;
@@ -101,7 +103,7 @@ void queue_free(queue *q) {
   }
   free(q);
 #else
-  printf("queue_free() (DISABLED)\n");
+  fprintf(stderr, "queue_free() (DISABLED)\n");
 #endif
 }
 
@@ -120,7 +122,6 @@ size_t queue_len(queue *q) { return q->size; }
 
 static node *find_item(queue *q, long n) {
   if (!q || q->size == 0) {
-    printf("FIND_ITEM RETURNED NULL!!!\n");
     return NULL;
   }
 
@@ -213,7 +214,7 @@ void *queue_dequeue_at(queue *q, long n) {
 
 int queue_cmp(queue *q1, queue *q2) {
   // TODO implement
-  printf("QUEUE_CMP NOT IMPLEMENTED YET\n");
+  print_error("List comparison is not implemented yet");
   return 0;
 }
 
@@ -264,7 +265,6 @@ string *queue_to_string(queue *q, string *(*to_string_func)(void *)) {
 
 void queue_print(queue *q, void (*print_func)(void *)) {
   if (q->size == 0) {
-    printf("NULL");
     return;
   }
 

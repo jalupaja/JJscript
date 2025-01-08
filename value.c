@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+void print_error(const char *);
+
 val_t *value_create(void *new_val, val_type_t val_type) {
   val_t *val = (val_t *)malloc(sizeof(val_t));
   switch (val_type) {
@@ -215,7 +217,7 @@ bool val2bool(val_t *val) {
     return str == NULL || string_get_char_at(str, 0) == '\0';
   } break;
   default:
-    printf("Unsupported value type(val_true)");
+    print_error("Unsupported boolean conversion");
     break;
   }
   return false;
@@ -231,7 +233,7 @@ long val2int(val_t *val) {
   else if (val->val_type == STRING_TYPE)
     return (long)string_get_char_at(val->val.strval, 0);
   else
-    printf("VAL2INT: Unsupported val_type %d\n", val->val_type);
+    print_error("Unsupported integer conversion");
   return 0;
 }
 
@@ -245,7 +247,7 @@ double val2float(val_t *val) {
   else if (val->val_type == STRING_TYPE)
     return (double)string_get_char_at(val->val.strval, 0);
   else
-    printf("VAL2FLOAT: Unsupported val_type %d\n", val->val_type);
+    print_error("Unsupported floating point conversion");
   return 0;
 }
 
@@ -266,7 +268,7 @@ size_t value_len(val_t *val) {
   } else if (val->val_type == QUEUE_TYPE) {
     return queue_len(val->val.qval);
   } else {
-    printf("VALUE_LEN: Unsupported val_type %d\n", val->val_type);
+    print_error("Unsupported length operation");
   }
   return 0;
 }
@@ -284,7 +286,7 @@ val_t **value_ptr_at(val_t *val, long n) {
   } else if (val->val_type == QUEUE_TYPE) {
     ret = (val_t **)queue_ptr_at(val->val.qval, n);
   } else {
-    printf("VALUE_AT: Unsupported val_type %d\n", val->val_type);
+    print_error("Fetched unsupported value");
   }
   return ret;
 }
@@ -323,6 +325,6 @@ void value_free(val_t *val) {
   }
   free(val);
 #else
-  printf("value_free() (DISABLED)\n");
+  fprintf(stderr, "value_free() (DISABLED)\n");
 #endif
 }

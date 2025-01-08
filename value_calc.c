@@ -9,6 +9,8 @@
 
 #define DEBUG 0
 
+void print_error(const char *);
+
 int value_cmp(val_t *a, val_t *b) {
   if (!a || !b)
     return 0;
@@ -58,7 +60,7 @@ int value_cmp(val_t *a, val_t *b) {
   default:
     break;
   }
-  printf("UNSUPPORTED COMPARISON\n");
+  print_error("Unsupported comparison");
   return 0;
 }
 
@@ -113,8 +115,7 @@ val_t *addition(val_t *a, val_t *b) {
     }
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported addition");
   return value_create(NULL, NULL_TYPE);
 }
 
@@ -191,8 +192,7 @@ val_t *subtraction(val_t *a, val_t *b) {
     }
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported subtraction");
   return value_create(NULL, NULL_TYPE);
 }
 
@@ -246,8 +246,7 @@ val_t *multiplication(val_t *a, val_t *b) {
     }
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported multiplication");
   return value_create(NULL, NULL_TYPE);
 }
 
@@ -279,15 +278,14 @@ val_t *division(val_t *a, val_t *b) {
 
     double b_val = val2float(b);
     if (b_val == 0.0) {
-      fprintf(stderr, "Warning: Division by 0\n");
+      print_error("Division by 0");
       return value_create(NULL, NULL_TYPE);
     }
     double res = val2float(a) / b_val;
     return value_create(&res, FLOAT_TYPE);
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported division");
   return value_create(NULL, NULL_TYPE);
 }
 
@@ -326,8 +324,7 @@ val_t *power(val_t *a, val_t *b) {
     }
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported power operation");
   return value_create(NULL, NULL_TYPE);
 }
 
@@ -367,8 +364,7 @@ val_t *modulo(val_t *a, val_t *b) {
     }
   }
 
-  printf("Unsupported add operation between types %d and %d\n", a->val_type,
-         b->val_type);
+  print_error("Unsupported modulo");
   return value_create(NULL, NULL_TYPE);
 }
 

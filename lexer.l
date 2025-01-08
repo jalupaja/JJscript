@@ -77,7 +77,7 @@ void print_error(const char *msg) {
         if (eol_error)
             fprintf(stderr, "%s\n", string_get_chars(cur_line));
 
-        fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR "\n\n", msg, yyleng, yytext);
+        fprintf(stderr, RED_COLOR "%s" RESET_COLOR "\n\n", msg);
     }
 
 }

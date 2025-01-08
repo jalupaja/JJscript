@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 
+void print_error(const char *);
+
 void ast_free_outer(ast_t *t) {
 #ifndef NO_FREE
   if (!t)
@@ -13,7 +15,7 @@ void ast_free_outer(ast_t *t) {
   value_free(t->val);
   t->val = NULL;
 #else
-  printf("ast_free() (DISABLED)\n");
+  fprintf(stderr, "ast_free() (DISABLED)\n");
 #endif
 }
 
@@ -30,7 +32,7 @@ void ast_free(ast_t *t) {
     t->c[i] = NULL;
   }
 #else
-  printf("ast_free() (DISABLED)\n");
+  fprintf(stderr, "ast_free() (DISABLED)\n");
 #endif
 }
 

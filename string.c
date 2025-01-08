@@ -11,6 +11,8 @@
 
 #define DEBUG 0
 
+void print_error(const char *);
+
 size_t calc_index(long index, size_t length) {
   if (length == 0)
     return 0;
@@ -28,20 +30,13 @@ string *string_create(const char *init) {
   string *str = (string *)malloc(sizeof(string));
   if (DEBUG)
     printf("NEW STRING: %s (%p)\n", init, init);
-  if (!str) {
-    fprintf(stderr, "Memory allocation failed for string struct\n");
-    exit(EXIT_FAILURE);
-  }
+
   str->length = init ? strlen(init) : 0;
   str->capacity =
       (str->length + 1 > INITIAL_CAPACITY) ? str->length + 1 : INITIAL_CAPACITY;
 
   str->data = (char *)malloc(str->capacity);
-  if (!str->data) {
-    fprintf(stderr, "Memory allocation failed for string data\n");
-    free(str);
-    exit(EXIT_FAILURE);
-  }
+
   if (DEBUG)
     printf("Allocating string data at %p with capacity %zu - '%s'\n",
            (void *)str->data, str->capacity, init);
@@ -401,6 +396,6 @@ void string_free(string *str) {
   }
   free(str);
 #else
-  printf("string_free() (DISABLED)\n");
+  fprintf(stderr, "string_free() (DISABLED)\n");
 #endif
 }

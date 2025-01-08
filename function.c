@@ -21,6 +21,6 @@ void function_free(fun_t *fun) {
   ast_free(fun->body);
   free(fun);
 #else
-  printf("function_free() (DISABLED)\n");
+  fprintf(stderr, "function_free() (DISABLED)\n");
 #endif
 }
