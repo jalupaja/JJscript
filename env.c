@@ -87,6 +87,34 @@ val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
   return *res;
 }
 
+env_var_t *_env_search(string *id) {
+  if (DEBUG)
+    printf("_env_search: %s\n", string_get_chars(id));
+  env_t *env = cur_env;
+  for (int i = 0; i < 2; i++) {
+    // search current_env first, then global env
+    env_var_t *res = (env_var_t *)queue_search(env->vars, id);
+    if (res != NULL) {
+      if (DEBUG)
+        printf("_env_search res(%p): %s\n", res,
+               string_get_chars(val2string(res->val)));
+      return res;
+    }
+    // get global env (first env)
+    bool new_env = false;
+    while (env->parent) {
+      // TODO printf("SEARCHING LOWER ENV\n");
+      new_env = true;
+      env = env->parent;
+    }
+    if (!new_env)
+      break;
+  }
+  if (DEBUG)
+    printf("_env_search res(EMPTY)\n");
+  return NULL;
+}
+
 env_var_t *env_search_all(string *id) {
   if (DEBUG)
     printf("env_search_all: %s\n", string_get_chars(id));
@@ -106,9 +134,13 @@ env_var_t *env_search_all(string *id) {
   return NULL;
 }
 
+env_var_t *env_search_top(string *id) {
+  return (env_var_t *)queue_search(cur_env->vars, id);
+}
+
 val_t *env_search(val_t *id) {
   if (id && id->val_type == STRING_TYPE) {
-    env_var_t *found = env_search_all(id->val.strval);
+    env_var_t *found = _env_search(id->val.strval);
     if (found) {
       queue *indexes = id->indexes;
       val_t **res = &found->val;
@@ -123,13 +155,9 @@ val_t *env_search(val_t *id) {
   return NULL;
 }
 
-env_var_t *env_search_top(string *id) {
-  return (env_var_t *)queue_search(cur_env->vars, id);
-}
-
 void env_save(val_t *id, val_t *val) {
   // TODO could prob. free overwritten values...
-  env_var_t *cur = env_search_top(id->val.strval);
+  env_var_t *cur = _env_search(id->val.strval);
   if (DEBUG)
     printf("assign(env: %p): %s = %s", cur_env,
            string_get_chars(id->val.strval), string_get_chars(val2string(val)));
@@ -156,25 +184,6 @@ void env_save(val_t *id, val_t *val) {
     // enqueue new value
     if (DEBUG)
       printf("(new)\n");
-    if (indexes) { // if value is supposed to be an array, copy it from lower
-                   // environments, then change the value
-      if (DEBUG)
-        printf("env_search found indexes\n");
-      cur = env_search_all(id->val.strval);
-
-      if (cur != NULL) {
-        val_t *new_val = value_copy(cur->val);
-        res = &new_val;
-
-        parse_indexes(res, indexes, val);
-
-        env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
-        new->id = id->val.strval;
-        new->val = new_val;
-        queue_enqueue(cur_env->vars, new);
-        return;
-      }
-    }
     env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
     new->id = id->val.strval;
     new->val = val;
