@@ -881,24 +881,30 @@ int main (int argc, char **argv) {
     error_count = 0;
     parsing_finished = true;
 
-    env_push(); // create main environment
-	yyin = fopen(argv[1], "r");
-    if (!yyin) {
-        string *err_str = string_create("File '");
-        string_append_chars(err_str, argv[1]);
-        string_append_chars(err_str, "' not found");
-        print_error(string_get_chars(err_str));
-        string_free(err_str);
-        return 1;
-    }
-    parsing_finished = false;
-    yyparse();
-    parsing_finished = true;
-
-    if (error_count > 0) {
-        fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
-        fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
+    // check if file ends with .jj
+    size_t str_len = strlen(argv[1]);
+    if (str_len < 4 || strncmp(argv[1] + str_len - 3, ".jj", 3) != 0) {
+        fprintf(stderr, "Invalid filetype. Does it end with .jj?");
     } else {
-        ex(root);
+        env_push(); // create main environment
+        yyin = fopen(argv[1], "r");
+        if (!yyin) {
+            string *err_str = string_create("File '");
+            string_append_chars(err_str, argv[1]);
+            string_append_chars(err_str, "' not found");
+            print_error(string_get_chars(err_str));
+            string_free(err_str);
+            return 1;
+        }
+        parsing_finished = false;
+        yyparse();
+        parsing_finished = true;
+
+        if (error_count > 0) {
+            fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
+            fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
+        } else {
+            ex(root);
+        }
     }
 }
