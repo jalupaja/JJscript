@@ -188,8 +188,8 @@ FUN_CALL: ID lbrak ARGS rbrak { $$ = node1(fun, $1); $$->val = value_create($3, 
 ID_EVAL:  ID { $$ = node1(_id_eval, $1); }
 
 ID:       id_start id_end { $$ = node0(_id); $$->val = $2; }
-        | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); /* TODO | ID lsquare EXPR rsquare { $$ = node2(_arr_call, $1, $3); */ }
-        | ID lsquare EXPR rsquare { /* TODO theoretically remove, if _arr_call returns the pointer?/ id +index */ $$ = node2(_arr, $1, $3); }
+        | id_start EMBED_ID  { $$ = node0(_id); $$->val = value_create($2, QUEUE_TYPE); }
+        | ID lsquare ARGS rsquare { $$ = node1(_arr, $1); $$->val = value_create($3, QUEUE_TYPE); }
 
 EMBED_ID: embed_lcurly EXPR rcurly id_end {
            $$ = queue_create();
@@ -488,12 +488,18 @@ val_t *ex(ast_t *t) {
             }
 
             queue *new_indexes = queue_create();
-            val_t *at = ex(t->c[1]);
 
-            if (at->val_type == QUEUE_TYPE) {
-                queue_append(new_indexes, at->val.qval);
-            } else {
-                queue_enqueue(new_indexes, (void *)at);
+            queue *args = t->val->val.qval;
+
+            size_t q_len = queue_len(args);
+            for (size_t i = 0; i < q_len; i++) {
+                val_t *new_val = ex((ast_t *)queue_at(args, i));
+
+                if (new_val->val_type == QUEUE_TYPE) {
+                    queue_append(new_indexes, new_val->val.qval);
+                } else {
+                    queue_enqueue(new_indexes, (void *)new_val);
+                }
             }
 
             // enqueue new_indexes to indexes
