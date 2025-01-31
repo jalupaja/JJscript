@@ -53,38 +53,81 @@ env_var_t *queue_search(queue *q, string *id) {
   return NULL;
 }
 
-val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
+void __parse_indexes(val_t **res, queue *indexes, size_t cur_index,
+                     val_t *new_val, queue *ret_queue) {
   size_t q_len = queue_len(indexes);
-  for (size_t i = 0; i < q_len; i++) {
-    long *index = (long *)queue_at(indexes, i);
-    if (!index) {
-      print_error("Invalid index");
-      break;
+  queue *cur_indexes = (queue *)queue_at(indexes, cur_index);
+  bool last_round = (cur_index == q_len - 1);
+
+  size_t cur_ind_len = queue_len(cur_indexes);
+  for (size_t j = 0; j < cur_ind_len; j++) {
+    val_t *ind_val = (val_t *)queue_at(cur_indexes, j);
+
+    long ind = val2int(ind_val);
+
+    val_t **new_res;
+    val_t **tmp_res = value_ptr_at(*res, ind);
+    if (tmp_res) {
+      // allow 2[0]
+      new_res = tmp_res;
+    } else {
+      new_res = res;
+      // Fix "1234"[1][0] -> "1234"[0]
+      if ((*new_res)->val_type == STRING_TYPE) {
+        last_round = true;
+      }
     }
 
-    val_t **new_res = value_ptr_at(*res, *index);
-
-    if (new_res) {
-      res = new_res;
-    } else if ((*res)->val_type == STRING_TYPE) {
+    if (!last_round) {
+      __parse_indexes(new_res, indexes, cur_index + 1, new_val, ret_queue);
+    } else {
       if (new_val) {
         // env_save
-        string *replace = val2string(new_val);
-        string_replace_at((*res)->val.strval, *index, replace);
-        string_free(replace);
-        new_val = NULL;
+        if ((*new_res)->val_type == STRING_TYPE) {
+          string *replace = val2string(new_val);
+          string_replace_at((*new_res)->val.strval, ind, replace);
+          string_free(replace);
+          new_val = NULL;
+        } else {
+          *new_res = new_val;
+        }
       } else {
         // env_search
-        string *str_res = string_create(NULL);
-        string_append_char(str_res,
-                           string_get_char_at((*res)->val.strval, *index));
-        return value_create(str_res, STRING_TYPE);
+        if ((*new_res)->val_type == STRING_TYPE) {
+          string *str_res = string_create(NULL);
+          string_append_char(str_res,
+                             string_get_char_at((*new_res)->val.strval, ind));
+          queue_enqueue(ret_queue, (void *)value_create(str_res, STRING_TYPE));
+        } else {
+          queue_enqueue(ret_queue, (void *)*new_res);
+        }
       }
     }
   }
-  if (new_val)
-    *res = new_val;
-  return *res;
+}
+
+val_t *parse_indexes(val_t **res, queue *indexes, val_t *new_val) {
+  if (new_val) {
+    // env_save
+    __parse_indexes(res, indexes, 0, new_val, NULL);
+    return *res;
+  } else {
+    // env_search
+    queue *ret_queue = queue_create();
+    __parse_indexes(res, indexes, 0, new_val, ret_queue);
+
+    size_t q_len = queue_len(ret_queue);
+    if (q_len == 0) {
+      queue_free(ret_queue);
+      return NULL;
+    } else if (q_len == 1) {
+      val_t *ret = queue_at(ret_queue, 0);
+      queue_free(ret_queue);
+      return ret;
+    } else {
+      return value_create((void *)ret_queue, QUEUE_TYPE);
+    }
+  }
 }
 
 env_var_t *_env_search(string *id) {

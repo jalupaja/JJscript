@@ -487,12 +487,17 @@ val_t *ex(ast_t *t) {
                 indexes = id->indexes;
             }
 
+            queue *new_indexes = queue_create();
             val_t *at = ex(t->c[1]);
 
-            // enqueue index to indexes
-            long *int_ptr = (long *)malloc(sizeof(long));
-            *int_ptr = val2int(at);
-            queue_enqueue(indexes, int_ptr);
+            if (at->val_type == QUEUE_TYPE) {
+                queue_append(new_indexes, at->val.qval);
+            } else {
+                queue_enqueue(new_indexes, (void *)at);
+            }
+
+            // enqueue new_indexes to indexes
+            queue_enqueue(indexes, new_indexes);
 
             return id;
         }
