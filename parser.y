@@ -788,19 +788,27 @@ val_t *fun_call(val_t *id, queue *args) {
   env_push();
 
   size_t p_len = queue_len(fun->params);
+  queue *final_args = args;
   if (queue_len(args) != p_len) {
-    char buf[32];
-    string *err_str = string_create("Function '");
-    string_append_string(err_str, id->val.strval);
-    string_append_chars(err_str, "' expected ");
-    snprintf(buf, sizeof(buf), "%ld", p_len);
-    string_append_chars(err_str, buf);
-    string_append_chars(err_str, " arguments but got ");
-    snprintf(buf, sizeof(buf), "%ld", queue_len(args));
-    string_append_chars(err_str, buf);
-    print_error(string_get_chars(err_str));
-    string_free(err_str);
-    return value_create(NULL, NULL_TYPE);
+    if (queue_len(args) == 1 && (((val_t *)queue_at(args, 0))->val_type == QUEUE_TYPE) &&
+                                queue_len(((val_t *)queue_at(args, 0))->val.qval) == p_len) {
+      // TODO if there is only one argument, it expects more but the first is a queue ->
+      // use first argument as args
+      final_args = ((val_t *)queue_at(args, 0))->val.qval;
+    } else {
+      char buf[32];
+      string *err_str = string_create("Function '");
+      string_append_string(err_str, id->val.strval);
+      string_append_chars(err_str, "' expected ");
+      snprintf(buf, sizeof(buf), "%ld", p_len);
+      string_append_chars(err_str, buf);
+      string_append_chars(err_str, " arguments but got ");
+      snprintf(buf, sizeof(buf), "%ld", queue_len(args));
+      string_append_chars(err_str, buf);
+      print_error(string_get_chars(err_str));
+      string_free(err_str);
+      return value_create(NULL, NULL_TYPE);
+    }
   }
 
   // save args to env
@@ -808,7 +816,7 @@ val_t *fun_call(val_t *id, queue *args) {
   val_t *p_val;
   for (size_t i = 0; i < p_len; i++) {
     p_name = ex(queue_at(fun->params, i));
-    p_val = (val_t *)queue_at(args, i);
+    p_val = (val_t *)queue_at(final_args, i);
     if (DEBUG)
         printf("\t%s\n", string_get_chars(p_name->val.strval)); /* not actually a function pointer */
     env_save(p_name, p_val);

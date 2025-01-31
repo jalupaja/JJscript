@@ -6,13 +6,16 @@
 ### environments
 - variables designed outside of functions are considered global
 - local environments using `{ ... }`
-- functions using `id = { ... }` or `id = {(ARGS) ... }`
+
+#### Functions
+- create using `id = { ... }` or `id = {(ARGS) ... }`
+- call using `id(1, 2, 3);` or using `id([1, 2, 3]);`
 
 ### Variables
 - dynamically typed: `x = 1.3; x = "abc";`
 - dynamically named: `x${x} = true; printl(xabc)`
 
-#### datatypes
+#### Datatypes
 - integer (Hex values using 0x...)
 - float
 - string
