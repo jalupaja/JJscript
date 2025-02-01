@@ -19,6 +19,7 @@ void renew_str() {
 int prev_line_num, cur_line_num, cur_chr;
 string *prev_line = NULL;
 string *cur_line = NULL;
+char *cur_file_name;
 int error_count = 0;
 bool parsing_finished = false;
 
@@ -42,11 +43,17 @@ void print_error(const char *msg) {
                 c_line = string_get_chars(prev_line);
                 msg = "syntax error, missing End Of Line character"; // custom message
                 yytext = ";";
-        }      
+        } else {
+            if (_cur_chr_num > strlen(c_line))
+                _cur_chr_num = strlen(c_line) - 1;
+        }
 
-        fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num, msg);
+        fprintf(stderr, BOLD RED_COLOR "Error in %s" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", cur_file_name, _cur_line_num, _cur_chr_num + 1, msg);
 
-        fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
+        if (_cur_chr_num >= strlen(c_line))
+            fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num);
+        else
+            fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "%s\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
 
         for (int i = 0; i < _cur_chr_num; i++) {
             if (c_line[i] == '\t') {
@@ -62,13 +69,16 @@ void print_error(const char *msg) {
         }
         fprintf(stderr, RESET_COLOR "\n");
 
-        fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num);
+        fprintf(stderr, RED_COLOR "%s: \"%.*s\"" RESET_COLOR " at " CYAN_COLOR "%d:%d" RESET_COLOR "\n\n", msg, yyleng, yytext, _cur_line_num, _cur_chr_num + 1);
     } else {
         _cur_chr_num = string_len(prev_line);
 
         fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ": %s\n", msg);
 
-        fprintf(stderr, BOLD RED_COLOR "%.*s" "%.*s" "%s\n" BOLD RESET_COLOR, _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
+        if (_cur_chr_num >= strlen(c_line))
+            fprintf(stderr, BOLD RED_COLOR "%.*s" "%.*s" "\n" BOLD RESET_COLOR, _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num);
+        else
+            fprintf(stderr, BOLD RED_COLOR "%.*s" "%.*s" "%s\n" BOLD RESET_COLOR, _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num, c_line + _cur_chr_num + yyleng);
 
         fprintf(stderr, RED_COLOR BOLD);
         int t_len = yyleng + strlen(c_line + yyleng);
@@ -81,7 +91,6 @@ void print_error(const char *msg) {
 
         fprintf(stderr, RED_COLOR "%s" RESET_COLOR "\n\n", msg);
     }
-
 }
 
 void save_line(char *line) {
@@ -94,6 +103,7 @@ void save_line(char *line) {
     } else {
         if (string_cmp_chars(cur_line, "")) {
             // only save if cur_line is not empty for better EOL errors
+
             string_clear(prev_line);
             string_append_string(prev_line, cur_line);
             prev_line_num = cur_line_num;
@@ -107,12 +117,6 @@ void save_line(char *line) {
 }
 
 #define YY_USER_ACTION cur_chr+=yyleng;
-/*
-#define YY_USER_ACTION \
-    printf("Matched token: '%s', yyleng: %d, cur_chr before: %d", yytext, yyleng, cur_chr); \
-    cur_chr += yyleng; \
-    printf("-> %d\n", cur_chr);
-    */
 
 // {X} is "not in ID_PART" because my ID parsing structure needs uses shorter strings and therefore the variable print_me would result in a lexer error
 %}
