@@ -1,9 +1,9 @@
-printl(5 + 3);    // Expected: 10 (octal...)
+printl(5 + 3);    // Expected: 8
 printl(5 - 3);    // Expected: 2
-printl(5 * 3);    // Expected: 17
-printl(10 / 2);   // Expected: 4.00
-printl(10 % 3);   // Expected: 2
-printl(2 ^ 3);    // Expected: 10
+printl(5 * 3);    // Expected: 15
+printl(10 / 2);   // Expected: 5.00
+printl(10 % 3);   // Expected: 1
+printl(2 ^ 3);    // Expected: 8
 
 // Test cases for relational operators
 printl(5 < 3);    // Expected: false
