@@ -23,10 +23,16 @@ extern int yylex();
 extern void yyerror(const char *s);
 extern void print_error(const char *msg);
 extern YY_BUFFER_STATE yy_scan_string(const char *str);
+extern YY_BUFFER_STATE yy_create_buffer(FILE *file, int size);
+extern void yy_switch_to_buffer(YY_BUFFER_STATE new_buffer);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern FILE *yyin;
 extern int error_count;
+extern int cur_line_num;
+extern char *cur_file_name;
 extern bool parsing_finished;
+
+#define YY_BUF_SIZE 524288
 
 int yydebug=0;
 void yyerror (const char *msg) {
@@ -37,6 +43,7 @@ typedef struct ast_t ast_t;
 val_t *ex (ast_t *t);
 val_t *fun_call(val_t *id, queue *args);
 void opt_ast ( ast_t *t);
+FILE *open_file(char *file_name);
 
 ast_t *root;
 
@@ -55,7 +62,7 @@ enum {
 }
 
 %token _if _elif _else _while _for
-%token _return
+%token _return _import
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
 %token _arr_create <val> _range _arr_call _arr
@@ -103,6 +110,7 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | _printl lbrak rbrak { $$ = node1(_printl, NULL); }
     | _return lbrak rbrak { $$ = node1(_return, NULL); }
     | _return lbrak EXPR rbrak { $$ = node1(_return, $3); }
+    | _import lbrak EXPR rbrak { $$ = node1(_import, $3); }
     | _eval lbrak STRING rbrak { $$ = node1(_eval, $3); }
     | EXPR { $$ = node1(STMT, $1); }
 
@@ -209,7 +217,7 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
 val_t *eval(string *str, bool suppress_errors) {
     parsing_finished = false;
     if (suppress_errors)
-        if(freopen("/dev/null", "w", stderr) == NULL); // restore stderr
+        if(freopen("/dev/null", "w", stderr) == NULL); // remove stderr
     YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
     val_t *res = NULL;
 
@@ -217,14 +225,42 @@ val_t *eval(string *str, bool suppress_errors) {
     if (yyparse() == 0) {
         res = ex(root);
         // ast_free(root); // TODO
-        yy_delete_buffer(buffer);
     } else {
-        yy_delete_buffer(buffer);
         res = NULL;
     }
+    yy_delete_buffer(buffer);
+
     if (suppress_errors)
         if(freopen("/dev/tty", "w", stderr) == NULL); // restore stderr
     parsing_finished = true;
+    return res;
+}
+
+val_t *eval_file(char *file_name) {
+    FILE *file = open_file(file_name);
+    if (!file)
+        return NULL;
+
+    parsing_finished = false;
+    cur_line_num = 0;
+    cur_file_name = file_name;
+
+    YY_BUFFER_STATE buffer = yy_create_buffer(file, YY_BUF_SIZE);
+    yy_switch_to_buffer(buffer);
+
+    val_t *res = NULL;
+
+    // Parse the file.
+    if (yyparse() == 0) {
+        res = ex(root);
+        // TODO ast_free(root);
+    } else {
+        res = NULL;
+    }
+    yy_delete_buffer(buffer);
+
+    parsing_finished = true;
+    fclose(file);
     return res;
 }
 
@@ -657,6 +693,13 @@ val_t *ex(ast_t *t) {
             printf("\n");
             return value_create(NULL, NULL_TYPE);
         }
+        case _import: {
+            val_t *val = ex(t->c[0]);
+            string *str = val2string(val);
+            val_t *res = eval_file(string_get_chars(str));
+            string_free(str);
+            return res;
+        }
         case _eval: {
             val_t *val = ex(t->c[0]);
             string *str = val2string(val);
@@ -942,35 +985,59 @@ void opt_ast(ast_t *t) {
   }
 }
 
-int main (int argc, char **argv) {
-    srand(time(NULL));
-    error_count = 0;
-    parsing_finished = true;
-
+FILE *open_file(char *file_name) {
     // check if file ends with .jj
-    size_t str_len = strlen(argv[1]);
-    if (str_len < 4 || strncmp(argv[1] + str_len - 3, ".jj", 3) != 0) {
-        fprintf(stderr, "Invalid filetype. Does it end with .jj?");
+    size_t str_len = strlen(file_name);
+    if (str_len < 4 || strncmp(file_name + str_len - 3, ".jj", 3) != 0) {
+        print_error("Invalid filetype. Does it end with .jj?");
+        return NULL;
     } else {
-        env_push(); // create main environment
-        yyin = fopen(argv[1], "r");
-        if (!yyin) {
+        FILE *file = fopen(file_name, "r");
+
+        if (file) {
+            return file;
+        } else {
             string *err_str = string_create("File '");
-            string_append_chars(err_str, argv[1]);
+            string_append_chars(err_str, file_name);
             string_append_chars(err_str, "' not found");
             print_error(string_get_chars(err_str));
             string_free(err_str);
-            return 1;
+            return NULL;
         }
-        parsing_finished = false;
-        yyparse();
-        parsing_finished = true;
+    }
+}
 
-        if (error_count > 0) {
-            fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
-            fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
-        } else {
-            ex(root);
-        }
+void parse_file(char *file_name) {
+    FILE *new_yyin = open_file(file_name);
+    if (new_yyin) {
+        FILE *prev_yyin = yyin;
+
+        yyin = new_yyin;
+        cur_line_num = 0;
+        cur_file_name = file_name;
+
+        yyparse();
+
+        yyin = prev_yyin;
+        fclose(new_yyin);
+    }
+}
+
+int main (int argc, char **argv) {
+    srand(time(NULL));
+    parsing_finished = true;
+    error_count = 0;
+
+    env_push(); // create main environment
+
+    parsing_finished = false;
+    parse_file(argv[1]);
+    parsing_finished = true;
+
+    if (error_count > 0) {
+        fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
+        fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
+    } else {
+        ex(root);
     }
 }

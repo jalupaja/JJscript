@@ -144,6 +144,7 @@ STR_SINGLE "'"
 MULTI_STR_SINGLE "'''"
 PRINTLN "printl"
 PRINT "print"
+IMPORT "import"
 EVAL "eval"
 LEN "len"
 SPLIT "split"
@@ -217,8 +218,9 @@ EOL ";"
 {ELSE}/{X}     { return _else; }
 {WHILE}/{X}    { return _while; }
 {FOR}/{X}      { return _for; }
-{PRINT}/{X}    { return _print; }
 {PRINTLN}/{X}  { return _printl; }
+{PRINT}/{X}    { return _print; }
+{IMPORT}/{X}   { return _import; }
 {EVAL}/{X}     { return _eval; }
 {LEN}/{X}      { return _len; }
 {SPLIT}/{X}    { return _split; }
