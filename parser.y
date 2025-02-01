@@ -111,7 +111,6 @@ STMT: ID assign EXPR { $$ = node2(assign_id, $1, $3); }
     | _return lbrak rbrak { $$ = node1(_return, NULL); }
     | _return lbrak EXPR rbrak { $$ = node1(_return, $3); }
     | _import lbrak EXPR rbrak { $$ = node1(_import, $3); }
-    | _eval lbrak STRING rbrak { $$ = node1(_eval, $3); }
     | EXPR { $$ = node1(STMT, $1); }
 
 NON_STMT: ID assign lcurly lbrak PARAMS rbrak STMTS rcurly { $$ = node1(assign_fun, $1); $$->val = value_create(function_create($5, $7), FUNCTION_TYPE); /* assign a function */ }
@@ -164,6 +163,7 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | STRING
     | _input lbrak STRING rbrak { $$ = node1(_input, $3); }
     | _input lbrak rbrak { $$ = node1(_input, NULL); }
+    | _eval lbrak EXPR rbrak { $$ = node1(_eval, $3); }
     | _len lbrak EXPR rbrak { $$ = node1(_len, $3); }
     | _split lbrak EXPR delim EXPR delim rbrak { $$ = node2(_split, $3, $5); /* range with trailing comma */ }
     | _split lbrak EXPR delim EXPR rbrak { $$ = node2(_split, $3, $5); /* range */ }
