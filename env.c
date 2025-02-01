@@ -61,6 +61,7 @@ void __parse_indexes(val_t **res, queue *indexes, size_t cur_index,
 
   size_t cur_ind_len = queue_len(cur_indexes);
   for (size_t j = 0; j < cur_ind_len; j++) {
+    bool string_indexes_left = false;
     val_t *ind_val = (val_t *)queue_at(cur_indexes, j);
 
     long ind = val2int(ind_val);
@@ -75,6 +76,8 @@ void __parse_indexes(val_t **res, queue *indexes, size_t cur_index,
       // Fix "1234"[1][0] -> "1234"[0]
       if ((*new_res)->val_type == STRING_TYPE) {
         last_round = true;
+        // Fix ["abc"][-1] == "c"
+        string_indexes_left = true;
       }
     }
 
@@ -93,7 +96,7 @@ void __parse_indexes(val_t **res, queue *indexes, size_t cur_index,
         }
       } else {
         // env_search
-        if ((*new_res)->val_type == STRING_TYPE) {
+        if (string_indexes_left && (*new_res)->val_type == STRING_TYPE) {
           string *str_res = string_create(NULL);
           string_append_char(str_res,
                              string_get_char_at((*new_res)->val.strval, ind));
