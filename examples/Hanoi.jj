@@ -1,3 +1,5 @@
+import("lib/stdtypes.jj");
+
 hanoi = { (n, t_1, t_3, t_2)
     if n == 1 {
         printl("Move disk 1 from ${t_1} to ${t_3}");
@@ -8,5 +10,12 @@ hanoi = { (n, t_1, t_3, t_2)
     hanoi(n - 1, t_2, t_3, t_1);
 }
 
-hanoi(input("Enter the number of disks: "), "A", "C", "B");
+num = input("Enter the number of disks: ");
+num = eval(num + ";");
+
+if (is_num(num)) {
+    hanoi(num, "A", "C", "B");
+} else {
+    printl("INVALID INPUT!");
+}
 

@@ -1,0 +1,24 @@
+is_num = {(inp)
+    return(inp + 2 - 2 == inp);
+}
+
+is_bool = {(inp)
+    return(is_num(inp) & (inp == 1 | inp == 0));
+}
+
+is_list = {(inp)
+    return(!is_num(inp) & (len(inp) + 1 == len(inp + "")));
+}
+
+is_string = {(inp)
+    return(!is_num(inp) & !is_list(inp));
+}
+
+to_string = {(inp)
+    if (is_list(inp)) {
+        return("[" + join(inp, ", ") + "]");
+    } else {
+        return("" + inp);
+    }
+}
+

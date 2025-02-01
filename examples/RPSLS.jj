@@ -1,8 +1,6 @@
 options = ["rock", "paper", "scissors", "lizard", "spock"];
 
-is_num = {(inp)
-    return((inp - 1 + 1) == inp);
-}
+import("lib/stdtypes.jj");
 
 check_win = {(p1, p2)
     if p1 == p2 {
@@ -39,9 +37,11 @@ round = {()
     choice1 = options[rand(0, 4)];
     choice2 = input("Choose one: ${options}\n: ");
 
+    num_c2 = eval(choice2 + ";");
+
     // check if choice2 is a string in options
-    if (is_num(choice2)) {
-        choice2 = options[choice2 - 1];
+    if (is_num(num_c2)) {
+        choice2 = options[num_c2 - 1];
     } elif (!choice2 in options) {
         printl("Invalid option");
         return();
@@ -75,8 +75,8 @@ round = {()
     }
     printl();
 
-    if (!(round % 3)) {
-        printl("Stats after round ${round}:");
+    if (!(round_counter % 3)) {
+        printl("Stats after round ${round_counter}:");
         printl("Computer wins: ${computer_wins}");
         printl("Player wins: ${player_wins}");
         printl("Draws: ${draws}");
