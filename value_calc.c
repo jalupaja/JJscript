@@ -145,7 +145,7 @@ val_t *subtraction(val_t *a, val_t *b) {
     queue *new = queue_copy(a->val.qval);
     val_t *elem;
     for (int i = 0; i < val2int(b); i++) {
-      elem = queue_dequeue(new);
+      elem = queue_dequeue_at(new, queue_len(new) - 1);
       // can probably expect the queue to have val_t
       value_free(elem);
     }
@@ -154,7 +154,7 @@ val_t *subtraction(val_t *a, val_t *b) {
     queue *new = queue_copy(b->val.qval);
     val_t *elem;
     for (int i = 0; i < val2int(a); i++) {
-      elem = queue_dequeue_at(new, 0);
+      elem = queue_dequeue(new);
       // can probably expect the queue to have val_t
       value_free(elem);
     }
