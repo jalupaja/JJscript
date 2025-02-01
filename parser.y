@@ -222,11 +222,10 @@ val_t *eval(string *str, bool suppress_errors) {
     val_t *res = NULL;
 
     // Parse the input
+    res = NULL;
     if (yyparse() == 0) {
         res = ex(root);
         // ast_free(root); // TODO
-    } else {
-        res = NULL;
     }
     yy_delete_buffer(buffer);
 
@@ -235,7 +234,6 @@ val_t *eval(string *str, bool suppress_errors) {
     parsing_finished = true;
     return res;
 }
-
 
 string *normalize_path(string *path) {
     bool absolute = (path->data[0] == '/');
@@ -752,18 +750,7 @@ val_t *ex(ast_t *t) {
                 value_print(ex(t->c[0]));
             }
             string *str = string_read();
-            string_append_char(str, ';');
-            val_t *res = eval(str, true);
-            if (!res || res->val_type == NULL_TYPE || res->val_type == FUNCTION_TYPE) {
-                string_remove_chars_from_end(str, 1);
-                return value_create(str, STRING_TYPE);
-            } else {
-                string_free(str);
-                return res;
-            }
-            /*
-            return value_read();
-            */
+            return value_create(str, STRING_TYPE);
         }
         case _print: {
             val_t *val = ex(t->c[0]);
