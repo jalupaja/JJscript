@@ -8,7 +8,7 @@
 - local environments using `{ ... }`
 
 #### Functions
-- create using `id = { ... }` or `id = {(ARGS) ... }`
+- create using `id = {() ... }` or `id = {(ARGS) ... }`
 - call using `id(1, 2, 3);` or using `id([1, 2, 3]);`
 
 ### Variables

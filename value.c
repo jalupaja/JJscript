@@ -1,4 +1,5 @@
 #include "value.h"
+#include "ast.h"
 #include "function.h"
 #include "string.h"
 
@@ -192,10 +193,14 @@ string *val2string(val_t *val) {
 void value_print(val_t *val) {
   if (!val)
     return;
-  string *str = val2string(val);
-  printf("%s", string_get_chars(str));
-  // TODO should free but crashes when printing a queue?
-  // string_free(str);
+  if (val->val_type == FUNCTION_TYPE) {
+    ast_print(val->val.funval->body);
+  } else {
+    string *str = val2string(val);
+    printf("%s", string_get_chars(str));
+    // TODO should free but crashes when printing a queue?
+    // string_free(str);
+  }
 }
 
 bool val2bool(val_t *val) {

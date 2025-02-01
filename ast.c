@@ -78,11 +78,11 @@ void ast_print(ast_t *t) {
   if (!t)
     return;
   printf(" ( %d", t->type);
+  if (t->val) {
+    printf("/");
+    value_print(t->val);
+  }
   for (int i = 0; i < MC; i++) {
-    if (t->val) {
-      printf("/");
-      value_print(t->val);
-    }
     printf(" ");
     ast_print(t->c[i]);
   }
