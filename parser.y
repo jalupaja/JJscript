@@ -770,9 +770,6 @@ val_t *ex(ast_t *t) {
             }
             return ret;
         }
-        default:
-            print_error("Unsupported node");
-            break;
     }
 
     return value_create(NULL, NULL_TYPE);
@@ -841,10 +838,22 @@ val_t *fun_call(val_t *id, queue *args) {
   return res;
 }
 
+void __opt_expr(val_t *test_val, ast_t *t) {
+    if (test_val->val_type != NULL_TYPE) {
+      t->type = val;
+      t->val = test_val;
+
+      ast_free(t->c[0]);
+      if (t->c[1])
+          ast_free(t->c[1]);
+      t->c[0] = t->c[1] = NULL;
+    } else {
+      value_free(test_val);
+    }
+}
+
 void opt_ast(ast_t *t) {
   // TODO functions that are never called, ...
-  // TODO
-  return;
   if (!t)
     return;
 
@@ -878,19 +887,57 @@ void opt_ast(ast_t *t) {
     // TODO implement more, per file typecheck val_type. is type necessary/ is
     // val_type...
     // TODO global add/... functions for "all" datatypes?
+  case '-':
+    test_val = subtraction(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
   case '+':
     test_val = addition(t->c[0]->val, t->c[1]->val);
-    if (test_val->val_type != NULL_TYPE) {
-      t->type = val;
-      t->val = test_val;
-
-      // TODO create free_a... (id has to be freed too)
-      ast_free(t->c[0]);
-      ast_free(t->c[1]);
-      t->c[0] = t->c[1] = NULL;
-    } else {
-      value_free(test_val);
-    }
+    __opt_expr(test_val, t);
+    break;
+  case '*':
+    test_val = multiplication(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '/':
+    test_val = division(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case _ge:
+    test_val = greater_equal_than(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case _le:
+    test_val = less_equal_than(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '<':
+    test_val = less_than(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '>':
+    test_val = greater_than(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '^':
+    test_val = power(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '%':
+    test_val = modulo(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '|':
+    test_val = OR(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '&':
+    test_val = AND(t->c[0]->val, t->c[1]->val);
+    __opt_expr(test_val, t);
+    break;
+  case '!':
+    test_val = NOT(t->c[0]->val);
+    __opt_expr(test_val, t);
     break;
   }
 }
