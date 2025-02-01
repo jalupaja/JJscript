@@ -62,6 +62,9 @@ int value_cmp(val_t *a, val_t *b) {
     break;
   default:
     break;
+  case FUNCTION_TYPE:
+    print_error("Unsupported comparison for a function");
+    break;
   }
   print_error("Unsupported comparison");
   return 0;
