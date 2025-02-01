@@ -29,7 +29,7 @@ extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern FILE *yyin;
 extern int error_count;
 extern int cur_line_num;
-extern char *cur_file_name;
+extern string *cur_file_name;
 extern bool parsing_finished;
 
 #define YY_BUF_SIZE 524288
@@ -236,14 +236,98 @@ val_t *eval(string *str, bool suppress_errors) {
     return res;
 }
 
-val_t *eval_file(char *file_name) {
-    FILE *file = open_file(file_name);
+
+string *normalize_path(string *path) {
+    bool absolute = (path->data[0] == '/');
+    string *result = string_create("");
+
+    if (absolute)
+        string_append_chars(result, "/");
+
+    size_t pos = 0;
+    string *token = NULL;
+    while ((token = string_tokenize_chars(path, "/", &pos)) != NULL) {
+        if (token->length == 0) {
+            string_free(token);
+            continue;
+        }
+
+        if (string_cmp_chars(token, ".") == 0) {
+            string_free(token);
+            continue;
+        }
+
+        if (string_cmp_chars(token, "..") == 0) {
+            string_free(token);
+            if (result->length > (absolute ? 1 : 0)) {
+                char *last_slash = strrchr(result->data, '/');
+                if (last_slash != NULL) {
+                    size_t index = last_slash - result->data;
+                    if (absolute && index == 0)
+                        string_remove_chars_from_end(result, result->length - 1);
+                    else
+                        string_remove_chars_from_end(result, result->length - index);
+                } else {
+                    string_clear(result);
+                }
+            } else if (!absolute) {
+                if (result->length > 0 && result->data[result->length - 1] != '/')
+                    string_append_chars(result, "/");
+                string_append_chars(result, "..");
+            }
+            continue;
+        }
+
+        if (result->length > 0 && result->data[result->length - 1] != '/')
+            string_append_chars(result, "/");
+
+        string_append_string(result, token);
+        string_free(token);
+    }
+
+    if (result->length == 0)
+        string_append_chars(result, absolute ? "/" : ".");
+    return result;
+}
+
+string *parse_path(string *cur_path, string *next_path) {
+    string *combined = NULL;
+
+    if (next_path->data[0] == '/') {
+        // use absolute next_path
+        combined = string_copy(next_path);
+    } else {
+        combined = string_copy(cur_path);
+
+        size_t len = combined->length;
+        if (len > 0 && combined->data[len - 1] != '/') {
+            char *last_slash = strrchr(combined->data, '/');
+            if (last_slash) {
+                size_t pos = (size_t)(last_slash - combined->data) + 1;
+                combined->data[pos] = '\0';
+                combined->length = pos;
+            } else {
+                string_clear(combined);
+                string_append_chars(combined, "./");
+            }
+        }
+        string_append_string(combined, next_path);
+    }
+
+    string *result = normalize_path(combined);
+    string_free(combined);
+    return result;
+}
+
+val_t *eval_file(string *file_name) {
+    string *parsed_path = parse_path(cur_file_name, file_name);
+    FILE *file = open_file(string_get_chars(parsed_path));
     if (!file)
         return NULL;
 
     parsing_finished = false;
     cur_line_num = 0;
-    cur_file_name = file_name;
+    cur_file_name = parsed_path;
 
     YY_BUFFER_STATE buffer = yy_create_buffer(file, YY_BUF_SIZE);
     yy_switch_to_buffer(buffer);
@@ -261,6 +345,7 @@ val_t *eval_file(char *file_name) {
 
     parsing_finished = true;
     fclose(file);
+    string_free(parsed_path);
     return res;
 }
 
@@ -696,7 +781,7 @@ val_t *ex(ast_t *t) {
         case _import: {
             val_t *val = ex(t->c[0]);
             string *str = val2string(val);
-            val_t *res = eval_file(string_get_chars(str));
+            val_t *res = eval_file(str);
             string_free(str);
             return res;
         }
@@ -1007,8 +1092,8 @@ FILE *open_file(char *file_name) {
     }
 }
 
-void parse_file(char *file_name) {
-    FILE *new_yyin = open_file(file_name);
+void parse_file(string *file_name) {
+    FILE *new_yyin = open_file(string_get_chars(file_name));
     if (new_yyin) {
         FILE *prev_yyin = yyin;
 
@@ -1031,7 +1116,7 @@ int main (int argc, char **argv) {
     env_push(); // create main environment
 
     parsing_finished = false;
-    parse_file(argv[1]);
+    parse_file(string_create(argv[1]));
     parsing_finished = true;
 
     if (error_count > 0) {
