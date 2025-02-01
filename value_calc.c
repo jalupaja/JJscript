@@ -15,7 +15,11 @@ int value_cmp(val_t *a, val_t *b) {
   if (!a || !b)
     return 0;
 
-  if (a->val_type == STRING_TYPE || b->val_type == STRING_TYPE) {
+  if (a->val_type == NULL_TYPE && b->val_type == NULL_TYPE) {
+    return 0;
+  } else if (a->val_type == NULL_TYPE || b->val_type == NULL_TYPE) {
+    return 1;
+  } else if (a->val_type == STRING_TYPE || b->val_type == STRING_TYPE) {
     return string_cmp(val2string(a), val2string(b));
   } else if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
     size_t len_diff = queue_len(a->val.qval) - queue_len(b->val.qval);
@@ -400,7 +404,7 @@ val_t *NOT(val_t *a) {
 }
 
 val_t *less_than(val_t *a, val_t *b) {
-  if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
+  if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) < 0;
@@ -411,7 +415,7 @@ val_t *less_than(val_t *a, val_t *b) {
 }
 
 val_t *greater_than(val_t *a, val_t *b) {
-  if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
+  if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) > 0;
@@ -422,7 +426,7 @@ val_t *greater_than(val_t *a, val_t *b) {
 }
 
 val_t *less_equal_than(val_t *a, val_t *b) {
-  if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
+  if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) <= 0;
@@ -433,7 +437,7 @@ val_t *less_equal_than(val_t *a, val_t *b) {
 }
 
 val_t *greater_equal_than(val_t *a, val_t *b) {
-  if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
+  if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) >= 0;
@@ -490,12 +494,13 @@ bool value_in(val_t *a, val_t *b) {
 }
 
 val_t *equal(val_t *a, val_t *b) {
-  if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
+  if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
   bool res = value_cmp(a, b) == 0;
   if (DEBUG)
     printf("CMP: %s == %s -> %d\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)), res);
+
   return value_create(&res, BOOL_TYPE);
 }
