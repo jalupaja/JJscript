@@ -15,17 +15,16 @@ int value_cmp(val_t *a, val_t *b) {
   if (!a || !b)
     return 0;
 
-  if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
-    return string_cmp(a->val.strval, b->val.strval);
-  }
-  if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
+  if (a->val_type == STRING_TYPE || b->val_type == STRING_TYPE) {
+    return string_cmp(val2string(a), val2string(b));
+  } else if (a->val_type == QUEUE_TYPE && b->val_type == QUEUE_TYPE) {
     size_t len_diff = queue_len(a->val.qval) - queue_len(b->val.qval);
     if (len_diff != 0)
       return len_diff;
     return queue_cmp(a->val.qval, b->val.qval);
-  }
-
-  if (a->val_type == BOOL_TYPE || b->val_type == BOOL_TYPE) {
+  } else if (a->val_type == QUEUE_TYPE || b->val_type == QUEUE_TYPE) {
+    return 0;
+  } else if (a->val_type == BOOL_TYPE || b->val_type == BOOL_TYPE) {
     return val2bool(a) - val2bool(b);
   }
 
