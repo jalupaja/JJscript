@@ -194,7 +194,7 @@ void value_print(val_t *val) {
   if (!val)
     return;
   if (val->val_type == FUNCTION_TYPE) {
-    ast_print(val->val.funval->body);
+    // ast_print(val->val.funval->body);
   } else {
     string *str = val2string(val);
     printf("%s", string_get_chars(str));
