@@ -48,7 +48,10 @@ void print_error(const char *msg) {
                 _cur_chr_num = strlen(c_line) - 1;
         }
 
-        fprintf(stderr, BOLD RED_COLOR "Error in %s" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", string_get_chars(cur_file_name), _cur_line_num, _cur_chr_num + 1, msg);
+        if (cur_file_name)
+            fprintf(stderr, BOLD RED_COLOR "Error in %s" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", string_get_chars(cur_file_name), _cur_line_num, _cur_chr_num + 1, msg);
+        else
+            fprintf(stderr, BOLD RED_COLOR "Error" RESET_COLOR ":" BOLD CYAN_COLOR "%d:%d" RESET_COLOR ": %s\n", _cur_line_num, _cur_chr_num + 1, msg);
 
         if (_cur_chr_num >= strlen(c_line))
             fprintf(stderr, "%.*s" BOLD RED_COLOR "%.*s" BOLD RESET_COLOR "\n", _cur_chr_num, c_line, yyleng, c_line + _cur_chr_num);

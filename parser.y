@@ -318,6 +318,7 @@ string *parse_path(string *cur_path, string *next_path) {
 }
 
 val_t *eval_file(string *file_name) {
+    string *prev_file_name = cur_file_name;
     string *parsed_path = parse_path(cur_file_name, file_name);
     FILE *file = open_file(string_get_chars(parsed_path));
     if (!file)
@@ -343,6 +344,7 @@ val_t *eval_file(string *file_name) {
 
     parsing_finished = true;
     fclose(file);
+    cur_file_name = prev_file_name;
     string_free(parsed_path);
     return res;
 }
