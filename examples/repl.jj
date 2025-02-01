@@ -1,0 +1,16 @@
+import("./lib/stdtypes.jj");
+
+printl("JJScript repl:");
+cur_str = "";
+while (true) {
+    line = input("> ");
+    cur_str += line;
+
+    if (cur_str[-1] == ";") {
+        res = eval(cur_str);
+        if (res != NONE) {
+            printl(res);
+        }
+        cur_str = "";
+    }
+}
