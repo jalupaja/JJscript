@@ -496,7 +496,7 @@ val_t *ex(ast_t *t) {
         case _aa: {
             val_t *id = ex(t->c[0]);
 
-            int one = 1;
+            long one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
             val_t *cur = env_search(id);
@@ -537,7 +537,7 @@ val_t *ex(ast_t *t) {
         case _ss: {
             val_t *id = ex(t->c[0]);
 
-            int one = 1;
+            long one = 1;
             val_t *val = value_create(&one, INT_TYPE);
 
             val_t *cur = env_search(id);
@@ -900,13 +900,13 @@ val_t *ex(ast_t *t) {
 
             if (ret_float) {
                 // pseudo floating points
-                int int_start = (int)(start * 100);
-                int int_end = (int)(end * 100);
-                int int_ret = int_start + rand() % (int_end - int_start + 1);
+                long int_start = (long)(start * 100);
+                long int_end = (long)(end * 100);
+                long int_ret = int_start + rand() % (int_end - int_start + 1);
                 double res = (double)int_ret / 100.0;
                 return value_create(&res, FLOAT_TYPE);
             } else {
-                int res = (int)start + rand() % ((int)end - (int)start + 1);
+                long res = (long)start + rand() % ((long)end - (long)start + 1);
                 return value_create(&res, INT_TYPE);
             }
         }
