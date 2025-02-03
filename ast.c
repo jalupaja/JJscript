@@ -74,10 +74,12 @@ ast_t *node4(int type, ast_t *c1, ast_t *c2, ast_t *c3, ast_t *c4) {
   return ret;
 }
 
+const char *type2str(int type); // inside parser.y
+
 void ast_print(ast_t *t) {
   if (!t)
     return;
-  printf(" ( %d", t->type);
+  printf(" (%s", type2str(t->type));
   if (t->val) {
     printf("/");
     value_print(t->val);
@@ -86,5 +88,5 @@ void ast_print(ast_t *t) {
     printf(" ");
     ast_print(t->c[i]);
   }
-  printf(" ) ");
+  printf(")");
 }

@@ -15,6 +15,7 @@
 #include <time.h>
 
 #define DEBUG 0
+#define PRINT_AST 0
 
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 
@@ -93,7 +94,16 @@ enum {
 
 %%
 
-S: STMTS { optimize($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); root = $1; }
+S: STMTS {
+     if (PRINT_AST) printf("\n");
+     if (PRINT_AST) ast_print($1);
+     if (PRINT_AST) printf("\n");
+     optimize($1);
+     if (PRINT_AST) printf("\n");
+     if (PRINT_AST) ast_print($1);
+     if (PRINT_AST) printf("\n");
+     root = $1;
+ }
 
 STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS NON_STMT { $$ = node2(STMTS, $1, $2); }
@@ -1005,8 +1015,6 @@ void opt_ast(ast_t *t) {
     // val_type...
     // TODO global add/... functions for "all" datatypes?
     // unused functions, unread variables (even better: this value is never read)
-  case '+':
-  printf("caln ADD\n");
   default:
     test_val = ex(t);
     break;
@@ -1094,4 +1102,111 @@ int main (int argc, char **argv) {
         ex(root);
         env_pop(); // create main environment
     }
+}
+
+const char *type2str(int type) {
+  switch (type) {
+  case STMTS:
+    return "STMTS";
+  case STMT:
+    return "STMT";
+  case _return:
+    return "return";
+  case '+':
+    return "'+'";
+  case '-':
+    return "'-'";
+  case '*':
+    return "'*'";
+  case '/':
+    return "'/'";
+  case '<':
+    return "'<'";
+  case '>':
+    return "'>'";
+  case _le:
+    return "<=";
+  case _ge:
+    return ">=";
+  case _eq:
+    return "==";
+  case _neq:
+    return "!=";
+  case '^':
+    return "'^'";
+  case '%':
+    return "'%'";
+  case '|':
+    return "'|'";
+  case '&':
+    return "'&'";
+  case '!':
+    return "'!'";
+  case assign_id:
+    return "assign";
+  case assign_add:
+    return "+=";
+  case _aa:
+    return "++";
+  case assign_sub:
+    return "-=";
+  case _ss:
+    return "--";
+  case assign_mul:
+    return "*=";
+  case assign_div:
+    return "/=";
+  case assign_mod:
+    return "%=";
+  case assign_fun:
+    return "assign fun";
+  case _str:
+    return "str";
+  case val:
+    return "value";
+  case _arr_create:
+    return "create arr";
+  case _arr_call:
+    return "call arr";
+  case _arr:
+    return "arr";
+  case _in:
+    return "in";
+  case _range:
+    return "range";
+  case fun:
+    return "call function";
+  case _id:
+    return "id";
+  case _id_eval:
+    return "id_eval";
+  case lcurly:
+    return "{";
+  case _input:
+    return "input";
+  case _print:
+    return "print";
+  case _printl:
+    return "printl";
+  case _import:
+    return "import";
+  case _eval:
+    return "eval";
+  case _len:
+    return "len";
+  case _split:
+    return "split";
+  case _random:
+    return "random";
+  case _if:
+    return "if";
+  case _else:
+    return "else";
+  case _while:
+    return "while";
+  case _for:
+    return "for";
+  default:
+    return "unknown token";
+  }
 }
