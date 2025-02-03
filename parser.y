@@ -40,8 +40,11 @@ void yyerror (const char *msg) {
     print_error(msg);
 }
 
+typedef val_t *(*ex_func)(ast_t *t, void *); // TODO should be ex_func instead of void but recursive typedef isn't allowed
+
 typedef struct ast_t ast_t;
-val_t *ex (ast_t *t);
+
+val_t *exec (ast_t *t, ex_func ex);
 val_t *fun_call(val_t *id, queue *args);
 void optimize(ast_t *t);
 FILE *open_file(char *file_name);
@@ -235,7 +238,7 @@ val_t *eval(string *str, bool suppress_errors) {
     // Parse the input
     res = NULL;
     if (yyparse() == 0) {
-        res = ex(root);
+        res = exec(root, (void *)exec);
         // ast_free(root); // TODO
     }
     yy_delete_buffer(buffer);
@@ -346,7 +349,7 @@ val_t *eval_file(string *file_name) {
 
     // Parse the file.
     if (yyparse() == 0) {
-        res = ex(root);
+        res = exec(root, (void *)exec);
         // TODO ast_free(root);
     } else {
         res = NULL;
@@ -374,7 +377,7 @@ string *join_embeds(queue *segments) {
         emb = (ast_t *)queue_at(segments, i + 1);
         suffix = (string *)queue_at(segments, i + 2);
 
-        res = ex(emb);
+        res = exec(emb, (void *)exec);
 
         string_append_string(str, prefix);
         string_append_string(str, val2string(res));
@@ -391,25 +394,25 @@ void __print_undefined_var(val_t *id) {
     string_free(err_str);
 }
 
-val_t *ex(ast_t *t) {
+val_t *exec(ast_t *t, ex_func ex) {
     if (!t)
         return value_create(NULL, NULL_TYPE);
 
     switch (t->type) {
         case STMTS:
-            val_t *res = ex(t->c[0]);
+            val_t *res = ex(t->c[0], ex);
 
             if (res && res->return_val) {
                 return res;
             } else {
-                return ex(t->c[1]);
+                return ex(t->c[1], ex);
             }
         case STMT:
-            return ex(t->c[0]);
+            return ex(t->c[0], ex);
         case _return: {
             val_t *res;
             if (t->c[0]) {
-                res = ex(t->c[0]);
+                res = ex(t->c[0], ex);
             } else {
                 res = value_create(NULL, NULL_TYPE);
             }
@@ -419,64 +422,64 @@ val_t *ex(ast_t *t) {
         case '+':
             if (t->c[0] == NULL) {
                 // +3 as number -> not an operation
-                return ex(t->c[1]);
+                return ex(t->c[1], ex);
             } else {
-                return addition(ex(t->c[0]), ex(t->c[1]));
+                return addition(ex(t->c[0], ex), ex(t->c[1], ex));
             }
         case '-': {
             if (t->c[0] == NULL) {
                 // -3 as number -> not an operation
                 long mul = -1;
                 val_t *mul_val = value_create(&mul, INT_TYPE);
-                val_t *res = multiplication(ex(t->c[1]), mul_val);
+                val_t *res = multiplication(ex(t->c[1], ex), mul_val);
                 value_free(mul_val);
                 return res;
             } else {
-                return subtraction(ex(t->c[0]), ex(t->c[1]));
+                return subtraction(ex(t->c[0], ex), ex(t->c[1], ex));
             }
         }
         case '*':
-            return multiplication(ex(t->c[0]), ex(t->c[1]));
+            return multiplication(ex(t->c[0], ex), ex(t->c[1], ex));
         case '/':
-            return division(ex(t->c[0]), ex(t->c[1]));
+            return division(ex(t->c[0], ex), ex(t->c[1], ex));
         case '<':
-            return less_than(ex(t->c[0]), ex(t->c[1]));
+            return less_than(ex(t->c[0], ex), ex(t->c[1], ex));
         case '>':
-            return greater_than(ex(t->c[0]), ex(t->c[1]));
+            return greater_than(ex(t->c[0], ex), ex(t->c[1], ex));
         case _le:
-            return less_equal_than(ex(t->c[0]), ex(t->c[1]));
+            return less_equal_than(ex(t->c[0], ex), ex(t->c[1], ex));
         case _ge:
-            return greater_equal_than(ex(t->c[0]), ex(t->c[1]));
+            return greater_equal_than(ex(t->c[0], ex), ex(t->c[1], ex));
         case _eq:
-            return equal(ex(t->c[0]), ex(t->c[1]));
+            return equal(ex(t->c[0], ex), ex(t->c[1], ex));
         case _neq: {
-            val_t *res = equal(ex(t->c[0]), ex(t->c[1]));
+            val_t *res = equal(ex(t->c[0], ex), ex(t->c[1], ex));
             res->val.boolval = ! (bool)res->val.boolval;
             return res;
         }
         case '^':
-            return power(ex(t->c[0]), ex(t->c[1]));
+            return power(ex(t->c[0], ex), ex(t->c[1], ex));
         case '%':
-            return modulo(ex(t->c[0]), ex(t->c[1]));
+            return modulo(ex(t->c[0], ex), ex(t->c[1], ex));
         case '|':
-            return OR(ex(t->c[0]), ex(t->c[1]));
+            return OR(ex(t->c[0], ex), ex(t->c[1], ex));
         case '&':
-            return AND(ex(t->c[0]), ex(t->c[1]));
+            return AND(ex(t->c[0], ex), ex(t->c[1], ex));
         case '!':
-            return NOT(ex(t->c[0]));
+            return NOT(ex(t->c[0], ex));
         case assign_id: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *res = ex(t->c[1]);
+            val_t *res = ex(t->c[1], ex);
             if (DEBUG)
                 printf("assign_id: %s = %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
             return res;
         }
         case assign_add: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *val = ex(t->c[1]);
+            val_t *val = ex(t->c[1], ex);
 
             val_t *cur = env_search(id);
             if (!cur) {
@@ -494,7 +497,7 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case _aa: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
             long one = 1;
             val_t *val = value_create(&one, INT_TYPE);
@@ -515,9 +518,9 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_sub: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *val = ex(t->c[1]);
+            val_t *val = ex(t->c[1], ex);
 
             val_t *cur = env_search(id);
             if (!cur) {
@@ -535,7 +538,7 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case _ss: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
             long one = 1;
             val_t *val = value_create(&one, INT_TYPE);
@@ -556,9 +559,9 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_mul: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *val = ex(t->c[1]);
+            val_t *val = ex(t->c[1], ex);
 
             val_t *cur = env_search(id);
             if (!cur) {
@@ -576,9 +579,9 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_div: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *val = ex(t->c[1]);
+            val_t *val = ex(t->c[1], ex);
 
             val_t *cur = env_search(id);
             if (!cur) {
@@ -596,9 +599,9 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_mod: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *val = ex(t->c[1]);
+            val_t *val = ex(t->c[1], ex);
 
             val_t *cur = env_search(id);
             if (!cur) {
@@ -616,7 +619,7 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case assign_fun: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
             env_save(id, t->val);
             return t->val;
@@ -634,7 +637,7 @@ val_t *ex(ast_t *t) {
 
             size_t q_len = queue_len(old_elems);
             for (size_t i = 0; i < q_len; i++) {
-                val_t *new_val = ex((ast_t *)queue_at(old_elems, i));
+                val_t *new_val = ex((ast_t *)queue_at(old_elems, i), ex);
                 queue_enqueue(new_elems, new_val);
             }
 
@@ -645,15 +648,15 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case _arr_call: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
             // TODO env_save_at
             val_t *cur = env_search(id);
-            val_t *at = ex(t->c[1]);
+            val_t *at = ex(t->c[1], ex);
 
             return value_at(cur, val2int(at));
         }
         case _arr: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
             queue *indexes = id->indexes;
             if (!indexes) {
@@ -667,7 +670,7 @@ val_t *ex(ast_t *t) {
 
             size_t q_len = queue_len(args);
             for (size_t i = 0; i < q_len; i++) {
-                val_t *new_val = ex((ast_t *)queue_at(args, i));
+                val_t *new_val = ex((ast_t *)queue_at(args, i), ex);
 
                 if (new_val->val_type == QUEUE_TYPE) {
                     queue_append(new_indexes, new_val->val.qval);
@@ -682,18 +685,18 @@ val_t *ex(ast_t *t) {
             return id;
         }
         case _in: {
-            val_t *left = ex(t->c[0]);
-            val_t *right = ex(t->c[1]);
+            val_t *left = ex(t->c[0], ex);
+            val_t *right = ex(t->c[1], ex);
 
             bool res = value_in(left, right);
             return value_create(&res, BOOL_TYPE);
         }
         case _range: {
-            val_t *left = ex(t->c[0]);
-            val_t *right = ex(t->c[1]);
+            val_t *left = ex(t->c[0], ex);
+            val_t *right = ex(t->c[1], ex);
             double step = 1;
             if (t->c[2]) {
-                step = val2float(ex(t->c[2]));
+                step = val2float(ex(t->c[2], ex));
             }
 
             if (step <= 0) {
@@ -732,7 +735,7 @@ val_t *ex(ast_t *t) {
             return res;
         }
         case fun: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
             val_t *cur = env_search(id);
             if (!cur || cur->val_type != FUNCTION_TYPE) {
@@ -748,7 +751,7 @@ val_t *ex(ast_t *t) {
 
             size_t q_len = queue_len(old_args);
             for (size_t i = 0; i < q_len; i++) {
-                val_t *new_val = ex((ast_t *)queue_at(old_args, i));
+                val_t *new_val = ex((ast_t *)queue_at(old_args, i), ex);
                 queue_enqueue(new_args, new_val);
             }
 
@@ -780,7 +783,7 @@ val_t *ex(ast_t *t) {
             return value_create(str, STRING_TYPE);
         }
         case _id_eval: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
             val_t *cur = env_search(id);
 
             if (cur) {
@@ -793,14 +796,14 @@ val_t *ex(ast_t *t) {
         case lcurly: {
             // local environment
             env_push();
-            ex(t->c[0]);
+            ex(t->c[0], ex);
             env_pop();
             return NULL;
         }
         case _input: {
             if (!no_interaction) {
                 if (t->c[0]) {
-                    value_print(ex(t->c[0]));
+                    value_print(ex(t->c[0], ex));
                 }
                 string *str = string_read();
                 return value_create(str, STRING_TYPE);
@@ -810,7 +813,7 @@ val_t *ex(ast_t *t) {
         }
         case _print: {
             if (!no_interaction) {
-                val_t *val = ex(t->c[0]);
+                val_t *val = ex(t->c[0], ex);
                 value_print(val);
                 return value_create(NULL, NULL_TYPE);
             } else {
@@ -820,7 +823,7 @@ val_t *ex(ast_t *t) {
         case _printl: {
             if (!no_interaction) {
                 if (t->c[0]) {
-                    val_t *val = ex(t->c[0]);
+                    val_t *val = ex(t->c[0], ex);
                     value_print(val);
                 }
                 printf("\n");
@@ -828,14 +831,14 @@ val_t *ex(ast_t *t) {
             return value_create(NULL, NULL_TYPE);
         }
         case _import: {
-            val_t *val = ex(t->c[0]);
+            val_t *val = ex(t->c[0], ex);
             string *str = val2string(val);
             val_t *res = eval_file(str);
             string_free(str);
             return res;
         }
         case _eval: {
-            val_t *val = ex(t->c[0]);
+            val_t *val = ex(t->c[0], ex);
             string *str = val2string(val);
             val_t *res = eval(str, false);
             if (res) {
@@ -846,7 +849,7 @@ val_t *ex(ast_t *t) {
             }
         }
         case _len: {
-            val_t *val = ex(t->c[0]);
+            val_t *val = ex(t->c[0], ex);
             if (!val || val->val_type == NULL_TYPE) {
                 return value_create(NULL, NULL_TYPE);
             }
@@ -854,10 +857,10 @@ val_t *ex(ast_t *t) {
             return value_create(&len, INT_TYPE);
         }
         case _split: {
-            val_t *val = ex(t->c[0]);
+            val_t *val = ex(t->c[0], ex);
             string *delim;
             if (t->c[1]) {
-                val_t *delim_val = ex(t->c[1]);
+                val_t *delim_val = ex(t->c[1], ex);
                 delim = val2string(delim_val);
             } else {
                 delim = string_create(" ");
@@ -879,8 +882,8 @@ val_t *ex(ast_t *t) {
             double start, end;
             bool ret_float = false;
             if (t->c[0] && t->c[1]) {
-                val_1 = ex(t->c[0]);
-                val_2 = ex(t->c[1]);
+                val_1 = ex(t->c[0], ex);
+                val_2 = ex(t->c[1], ex);
 
                 start = val2float(val_1);
                 end = val2float(val_2);
@@ -909,29 +912,29 @@ val_t *ex(ast_t *t) {
             }
         }
         case _if:
-            if (val2bool(ex(t->c[0]))) {
-                return ex(t->c[1]);
+            if (val2bool(ex(t->c[0], ex))) {
+                return ex(t->c[1], ex);
             } else if (t->c[2]) {
-                return ex(t->c[2]);
+                return ex(t->c[2], ex);
             }
             return value_create(NULL, NULL_TYPE);
         case _else:
-            return ex(t->c[0]);
+            return ex(t->c[0], ex);
         case _while: {
             val_t *ret = NULL;
-            while (val2bool(ex(t->c[0]))) {
-                ret = ex(t->c[1]);
+            while (val2bool(ex(t->c[0], ex))) {
+                ret = ex(t->c[1], ex);
             }
             // elif/else
             if (!ret) {
-                ret = ex(t->c[2]);
+                ret = ex(t->c[2], ex);
             }
             return ret;
         }
         case _for: {
-            val_t *id = ex(t->c[0]);
+            val_t *id = ex(t->c[0], ex);
 
-            val_t *expr = ex(t->c[1]);
+            val_t *expr = ex(t->c[1], ex);
 
             size_t expr_len = value_len(expr);
             val_t *cur;
@@ -939,11 +942,11 @@ val_t *ex(ast_t *t) {
             for (size_t i = 0; i < expr_len; i++) {
                 cur = value_at(expr, i);
                 env_save(id, value_copy(cur));
-                ret = ex(t->c[2]);
+                ret = ex(t->c[2], ex);
             }
             // elif/else
             if (!ret) {
-                ret = ex(t->c[3]);
+                ret = ex(t->c[3], ex);
             }
             return ret;
         }
@@ -1000,14 +1003,14 @@ val_t *fun_call(val_t *id, queue *args) {
   val_t *p_name;
   val_t *p_val;
   for (size_t i = 0; i < p_len; i++) {
-    p_name = ex(queue_at(fun->params, i));
+    p_name = exec(queue_at(fun->params, i), (void *)exec);
     p_val = (val_t *)queue_at(final_args, i);
     if (DEBUG)
         printf("\t%s\n", string_get_chars(p_name->val.strval)); /* not actually a function pointer */
     env_save(p_name, p_val);
   }
 
-  val_t *res = ex(fun->body);
+  val_t *res = exec(fun->body, (void *)exec);
   res->return_val = false;
 
   env_pop();
@@ -1053,7 +1056,7 @@ void opt_ast(ast_t *t) {
     // TODO global add/... functions for "all" datatypes?
     // unused functions, unread variables (even better: this value is never read)
   default:
-    test_val = ex(t);
+    test_val = exec(t, (void *)exec);
     break;
   }
 
@@ -1136,7 +1139,7 @@ int main (int argc, char **argv) {
         fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
     } else {
         env_push(); // create main environment
-        ex(root);
+        exec(root, (void *)exec);
         env_pop(); // create main environment
     }
 }
