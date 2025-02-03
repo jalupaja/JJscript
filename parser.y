@@ -384,6 +384,13 @@ string *join_embeds(queue *segments) {
     return str;
 }
 
+void __print_undefined_var(val_t *id) {
+    string *err_str = string_create("Undefined variable ");
+    string_append_string(err_str, id->val.strval);
+    print_error(string_get_chars(err_str));
+    string_free(err_str);
+}
+
 val_t *ex(ast_t *t) {
     if (!t)
         return value_create(NULL, NULL_TYPE);
@@ -472,6 +479,11 @@ val_t *ex(ast_t *t) {
             val_t *val = ex(t->c[1]);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = addition(cur, val);
 
             // TODO? value_free(val);
@@ -488,9 +500,14 @@ val_t *ex(ast_t *t) {
             val_t *val = value_create(&one, INT_TYPE);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = addition(cur, val);
 
-            value_free(val);
+            // %TODO? value_free(val);
 
             if (DEBUG)
                 printf("assign_++: %s\n", string_get_chars(id->val.strval));
@@ -503,6 +520,11 @@ val_t *ex(ast_t *t) {
             val_t *val = ex(t->c[1]);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = subtraction(cur, val);
 
             // TODO? value_free(val);
@@ -519,9 +541,14 @@ val_t *ex(ast_t *t) {
             val_t *val = value_create(&one, INT_TYPE);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = subtraction(cur, val);
 
-            value_free(val);
+            // TODO ? value_free(val);
 
             if (DEBUG)
                 printf("assign_--: %s\n", string_get_chars(id->val.strval));
@@ -534,6 +561,11 @@ val_t *ex(ast_t *t) {
             val_t *val = ex(t->c[1]);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = multiplication(cur, val);
 
             // TODO? value_free(val);
@@ -549,6 +581,11 @@ val_t *ex(ast_t *t) {
             val_t *val = ex(t->c[1]);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = division(cur, val);
 
             // TODO? value_free(val);
@@ -564,6 +601,11 @@ val_t *ex(ast_t *t) {
             val_t *val = ex(t->c[1]);
 
             val_t *cur = env_search(id);
+            if (!cur) {
+                __print_undefined_var(id);
+                return value_create(NULL, NULL_TYPE);
+            }
+
             val_t *res = modulo(cur, val);
 
             // TODO? value_free(val);
@@ -744,10 +786,7 @@ val_t *ex(ast_t *t) {
             if (cur) {
                 return cur;
             } else {
-                string *err_str = string_create("Undefined variable ");
-                string_append_string(err_str, id->val.strval);
-                print_error(string_get_chars(err_str));
-                string_free(err_str);
+                __print_undefined_var(id);
                 return value_create(NULL, NULL_TYPE);
             }
         }
