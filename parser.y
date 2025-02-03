@@ -824,10 +824,8 @@ val_t *ex(ast_t *t) {
                     value_print(val);
                 }
                 printf("\n");
-                return value_create(NULL, NULL_TYPE);
-            } else {
-                return value_create(NULL, FUTURE_TYPE);
             }
+            return value_create(NULL, NULL_TYPE);
         }
         case _import: {
             val_t *val = ex(t->c[0]);
