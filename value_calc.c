@@ -75,6 +75,8 @@ val_t *addition(val_t *a, val_t *b) {
     printf("ADDING: %s + %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -130,6 +132,8 @@ val_t *subtraction(val_t *a, val_t *b) {
     printf("SUBBING: %s - %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -207,6 +211,8 @@ val_t *multiplication(val_t *a, val_t *b) {
     printf("MULTIPLYING: %s * %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -261,6 +267,8 @@ val_t *division(val_t *a, val_t *b) {
     printf("DIVIDING: %s / %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -300,6 +308,8 @@ val_t *power(val_t *a, val_t *b) {
     printf("POWER: %s ^ %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -339,6 +349,8 @@ val_t *modulo(val_t *a, val_t *b) {
     printf("MODULOing: %s %% %s\n", string_get_chars(val2string(a)),
            string_get_chars(val2string(b)));
 
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -375,6 +387,8 @@ val_t *modulo(val_t *a, val_t *b) {
 }
 
 val_t *AND(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -386,6 +400,8 @@ val_t *AND(val_t *a, val_t *b) {
 }
 
 val_t *OR(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b || a->val_type == NULL_TYPE || b->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -397,6 +413,8 @@ val_t *OR(val_t *a, val_t *b) {
 }
 
 val_t *NOT(val_t *a) {
+  if (a && a->val_type == FUTURE_TYPE)
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || a->val_type == NULL_TYPE)
     return value_create(NULL, NULL_TYPE);
 
@@ -407,6 +425,8 @@ val_t *NOT(val_t *a) {
 }
 
 val_t *less_than(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
@@ -418,6 +438,8 @@ val_t *less_than(val_t *a, val_t *b) {
 }
 
 val_t *greater_than(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
@@ -429,6 +451,8 @@ val_t *greater_than(val_t *a, val_t *b) {
 }
 
 val_t *less_equal_than(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
@@ -440,6 +464,8 @@ val_t *less_equal_than(val_t *a, val_t *b) {
 }
 
 val_t *greater_equal_than(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 
@@ -453,6 +479,8 @@ val_t *greater_equal_than(val_t *a, val_t *b) {
 bool value_in(val_t *a, val_t *b) {
   if (DEBUG)
     printf("VALUE_IN: ");
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return false;
   if (DEBUG)
@@ -497,6 +525,8 @@ bool value_in(val_t *a, val_t *b) {
 }
 
 val_t *equal(val_t *a, val_t *b) {
+  if ((a && a->val_type == FUTURE_TYPE) || (b && b->val_type == FUTURE_TYPE))
+    return value_create(NULL, FUTURE_TYPE);
   if (!a || !b)
     return value_create(NULL, NULL_TYPE);
 

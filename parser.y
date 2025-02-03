@@ -42,8 +42,9 @@ void yyerror (const char *msg) {
 typedef struct ast_t ast_t;
 val_t *ex (ast_t *t);
 val_t *fun_call(val_t *id, queue *args);
-void opt_ast ( ast_t *t);
+void optimize(ast_t *t);
 FILE *open_file(char *file_name);
+bool no_interaction = false;
 
 ast_t *root;
 
@@ -92,7 +93,7 @@ enum {
 
 %%
 
-S: STMTS { opt_ast($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); root = $1; }
+S: STMTS { optimize($1); if (DEBUG) printf("\n"); if (DEBUG) ast_print($1); if (DEBUG) printf("\n"); root = $1; }
 
 STMTS: STMTS STMT eol { $$ = node2(STMTS, $1, $2); }
      | STMTS NON_STMT { $$ = node2(STMTS, $1, $2); }
@@ -401,7 +402,7 @@ val_t *ex(ast_t *t) {
         case '+':
             if (t->c[0] == NULL) {
                 // +3 as number -> not an operation
-                    return ex(t->c[1]);
+                return ex(t->c[1]);
             } else {
                 return addition(ex(t->c[0]), ex(t->c[1]));
             }
@@ -748,24 +749,36 @@ val_t *ex(ast_t *t) {
             return NULL;
         }
         case _input: {
-            if (t->c[0]) {
-                value_print(ex(t->c[0]));
+            if (!no_interaction) {
+                if (t->c[0]) {
+                    value_print(ex(t->c[0]));
+                }
+                string *str = string_read();
+                return value_create(str, STRING_TYPE);
+            } else {
+                return value_create(NULL, FUTURE_TYPE);
             }
-            string *str = string_read();
-            return value_create(str, STRING_TYPE);
         }
         case _print: {
-            val_t *val = ex(t->c[0]);
-            value_print(val);
-            return value_create(NULL, NULL_TYPE);
-        }
-        case _printl: {
-            if (t->c[0]) {
+            if (!no_interaction) {
                 val_t *val = ex(t->c[0]);
                 value_print(val);
+                return value_create(NULL, NULL_TYPE);
+            } else {
+                return value_create(NULL, FUTURE_TYPE);
             }
-            printf("\n");
-            return value_create(NULL, NULL_TYPE);
+        }
+        case _printl: {
+            if (!no_interaction) {
+                if (t->c[0]) {
+                    val_t *val = ex(t->c[0]);
+                    value_print(val);
+                }
+                printf("\n");
+                return value_create(NULL, NULL_TYPE);
+            } else {
+                return value_create(NULL, FUTURE_TYPE);
+            }
         }
         case _import: {
             val_t *val = ex(t->c[0]);
@@ -955,20 +968,6 @@ val_t *fun_call(val_t *id, queue *args) {
   return res;
 }
 
-void __opt_expr(val_t *test_val, ast_t *t) {
-    if (test_val->val_type != NULL_TYPE) {
-      t->type = val;
-      t->val = test_val;
-
-      ast_free(t->c[0]);
-      if (t->c[1])
-          ast_free(t->c[1]);
-      t->c[0] = t->c[1] = NULL;
-    } else {
-      value_free(test_val);
-    }
-}
-
 void opt_ast(ast_t *t) {
   // TODO functions that are never called, ...
   if (!t)
@@ -977,7 +976,8 @@ void opt_ast(ast_t *t) {
   for (int i = 0; i < MC; i++)
     opt_ast(t->c[i]);
 
-  val_t *test_val;
+  // if test_val is changed, update t
+  val_t *test_val = NULL;
   switch (t->type) {
   case _if:
     // dead code elimination
@@ -1004,59 +1004,39 @@ void opt_ast(ast_t *t) {
     // TODO implement more, per file typecheck val_type. is type necessary/ is
     // val_type...
     // TODO global add/... functions for "all" datatypes?
-  case '-':
-    test_val = subtraction(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
+    // unused functions, unread variables (even better: this value is never read)
   case '+':
-    test_val = addition(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '*':
-    test_val = multiplication(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '/':
-    test_val = division(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case _ge:
-    test_val = greater_equal_than(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case _le:
-    test_val = less_equal_than(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '<':
-    test_val = less_than(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '>':
-    test_val = greater_than(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '^':
-    test_val = power(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '%':
-    test_val = modulo(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '|':
-    test_val = OR(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '&':
-    test_val = AND(t->c[0]->val, t->c[1]->val);
-    __opt_expr(test_val, t);
-    break;
-  case '!':
-    test_val = NOT(t->c[0]->val);
-    __opt_expr(test_val, t);
+  printf("caln ADD\n");
+  default:
+    test_val = ex(t);
     break;
   }
+
+  if (test_val && test_val->val_type != FUTURE_TYPE && test_val->val_type != NULL_TYPE) {
+    t->type = val;
+    t->val = test_val;
+
+    /* TODO currently crashes because val = test_val = result from one of those...
+    ast_free(t->c[0]);
+    if (t->c[1])
+        ast_free(t->c[1]);
+    */
+    t->c[0] = t->c[1] = NULL;
+    }
+}
+
+void optimize(ast_t *t) {
+    if (DEBUG)
+        printf("OPTIMIZE:\n");
+    no_interaction = true;
+    env_push();
+
+    opt_ast(t);
+
+    env_pop();
+    no_interaction = false;
+    if (DEBUG)
+        printf("OPTIMIZING FINISHED:\n");
 }
 
 FILE *open_file(char *file_name) {
@@ -1102,8 +1082,6 @@ int main (int argc, char **argv) {
     parsing_finished = true;
     error_count = 0;
 
-    env_push(); // create main environment
-
     parsing_finished = false;
     parse_file(string_create(argv[1]));
     parsing_finished = true;
@@ -1112,6 +1090,8 @@ int main (int argc, char **argv) {
         fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
         fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
     } else {
+        env_push(); // create main environment
         ex(root);
+        env_pop(); // create main environment
     }
 }

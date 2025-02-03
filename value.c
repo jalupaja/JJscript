@@ -22,6 +22,7 @@ val_t *value_create(void *new_val, val_type_t val_type) {
     val->val.boolval = *(bool *)new_val;
     break;
   case NULL_TYPE:
+  case FUTURE_TYPE:
     break;
   case STRING_TYPE:
     val->val.strval = (string *)new_val;
@@ -177,6 +178,8 @@ string *val2string(val_t *val) {
   }
   case BOOL_TYPE:
     return string_create(val->val.boolval ? "true" : "false");
+  case FUTURE_TYPE:
+    return string_create("FUTURE");
   case NULL_TYPE:
     return string_create("NONE");
   case STRING_TYPE:
@@ -287,6 +290,7 @@ val_t **value_ptr_at(val_t *val, long n) {
   } else if (val->val_type == FLOAT_TYPE) {
   } else if (val->val_type == BOOL_TYPE) {
   } else if (val->val_type == NULL_TYPE) {
+  } else if (val->val_type == FUTURE_TYPE) {
   } else if (val->val_type == STRING_TYPE) {
   } else if (val->val_type == QUEUE_TYPE) {
     ret = (val_t **)queue_ptr_at(val->val.qval, n);
