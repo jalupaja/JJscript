@@ -215,14 +215,14 @@ void *queue_dequeue_at(queue *q, long n) {
 
 int queue_cmp(queue *q1, queue *q2) {
   if (queue_len(q1) != queue_len(q2))
-    return 0;
+    return 1;
 
   for (size_t i = 0; i < queue_len(q1); i++) {
     int res = value_cmp(queue_at(q1, i), queue_at(q2, i));
-    if (res == 0)
-      return 0;
+    if (res == 1)
+      return 1;
   }
-  return 1;
+  return 0;
 }
 
 void **queue_ptr_at(queue *q, long n) {

@@ -13,7 +13,7 @@ void print_error(const char *);
 
 int value_cmp(val_t *a, val_t *b) {
   if (!a || !b)
-    return 0;
+    return 1;
 
   if (a->val_type == NULL_TYPE && b->val_type == NULL_TYPE) {
     return 0;
