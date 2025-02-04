@@ -222,7 +222,7 @@ bool val2bool(val_t *val) {
     break;
   case STRING_TYPE: {
     string *str = val->val.strval;
-    return str == NULL || string_get_char_at(str, 0) == '\0';
+    return str->length != 0;
   } break;
   default:
     print_error("Unsupported boolean conversion");
