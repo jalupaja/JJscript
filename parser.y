@@ -840,9 +840,9 @@ val_t *exec(ast_t *t, ex_func ex) {
                 val_t *val = ex(t->c[0], ex);
                 if (!no_interaction)
                     value_print(val);
-                if (!no_interaction)
-                    printf("\n");
             }
+            if (!no_interaction)
+                printf("\n");
 
             if (!no_interaction)
                 return value_create(NULL, NULL_TYPE);
