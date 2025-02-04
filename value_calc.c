@@ -220,11 +220,11 @@ val_t *multiplication(val_t *a, val_t *b) {
     return value_create(queue_interleave(a->val.qval, b->val.qval), QUEUE_TYPE);
   } else if (a->val_type == QUEUE_TYPE) {
     queue *new = queue_copy(a->val.qval);
-    queue_repeat(new, val2int(b));
+    queue_repeat(new, val2int(b) - 1);
     return value_create(new, QUEUE_TYPE);
   } else if (b->val_type == QUEUE_TYPE) {
     queue *new = queue_copy(b->val.qval);
-    queue_repeat(new, val2int(a));
+    queue_repeat(new, val2int(a) - 1);
     return value_create(new, QUEUE_TYPE);
   } else if (a->val_type == STRING_TYPE && b->val_type == STRING_TYPE) {
     return value_create(string_interleave(a->val.strval, b->val.strval),
@@ -276,8 +276,7 @@ val_t *division(val_t *a, val_t *b) {
       (b->val_type == STRING_TYPE && a->val_type != STRING_TYPE)) {
     return subtraction(a, b);
   } else if (a->val_type == STRING_TYPE) {
-    return value_create(string_split(a->val.strval, val2string(b)),
-                        STRING_TYPE);
+    return value_create(string_split(a->val.strval, val2string(b)), QUEUE_TYPE);
   }
 
   if (a->val_type == BOOL_TYPE && b->val_type == BOOL_TYPE) {
