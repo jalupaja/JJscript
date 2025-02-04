@@ -1,13 +1,13 @@
 import("stdtypes.jj"); // TODO need relative path file imports
 
-join = {(arr, join_on)
+join = {(arr, delim)
     res = "";
     if (len(arr) == 0) {
         return(res);
     } else {
         for a : (arr - 1) {
             res += to_string(a);
-            res += join_on;
+            res += delim;
         }
         res += to_string(arr[-1]);
         return(res);

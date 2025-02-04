@@ -14,6 +14,7 @@ printl("global env: g = ${g}");
         printl("inside env: g = ${g}, i = ${i}");
 
         g++;
+        o++; ???
         i++;
 
         printl("changed values of g, i");

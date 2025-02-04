@@ -1,6 +1,0 @@
-printl("input something and I'll add '1' to it. Try all datatypes to see the result!");
-while (true) {
-
-    inp = input(": ");
-    printl("${inp} + 1: ${eval("${inp} + 1;")}");
-}

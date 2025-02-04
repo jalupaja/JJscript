@@ -32,16 +32,14 @@ cheat = {(p2)
     }
 }
 
-
 round = {()
-    choice1 = options[rand(0, 4)];
-    choice2 = input("Choose one: ${options}\n: ");
+    choice1 = options[rand(0, len(options) - 1)];
+    choice2 = input("\nChoose one: ${options}\n: ");
 
-    num_c2 = eval(choice2 + ";");
-
-    // check if choice2 is a string in options
-    if (is_num(num_c2)) {
-        choice2 = options[num_c2 - 1];
+    if (is_num_chars(choice2)) {
+        // check if choice2 is a string in options
+        choice2 = eval(choice2);
+        choice2 = options[choice2 - 1];
     } elif (!choice2 in options) {
         printl("Invalid option");
         return();
@@ -53,7 +51,7 @@ round = {()
     }
 
     res = check_win(choice1, choice2);
-    printl("I chose ${choice1} and you chose ${choice2}.");
+    printl("\nI chose ${choice1} and you chose ${choice2}.");
 
     if (res == -1) {
         draws++;
@@ -76,7 +74,7 @@ round = {()
     printl();
 
     if (!(round_counter % 3)) {
-        printl("Stats after round ${round_counter}:");
+        printl("\nStats after round ${round_counter}:");
         printl("Computer wins: ${computer_wins}");
         printl("Player wins: ${player_wins}");
         printl("Draws: ${draws}");
