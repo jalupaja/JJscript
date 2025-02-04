@@ -48,6 +48,7 @@ val_t *exec (ast_t *t, ex_func ex);
 val_t *fun_call(val_t *id, queue *args);
 void optimize(ast_t *t);
 FILE *open_file(char *file_name);
+const char *type2str(int type);
 bool no_interaction = false;
 
 ast_t *root;
@@ -1018,7 +1019,7 @@ val_t *fun_call(val_t *id, queue *args) {
   return res;
 }
 
-void opt_ast(ast_t *t) {
+val_t *opt_ast(ast_t *t, ex_func ex) {
   // TODO functions that are never called, ...
   if (!t)
     return;
@@ -1028,13 +1029,10 @@ void opt_ast(ast_t *t) {
 
   // if test_val is changed, update t
   val_t *test_val = NULL;
+  test_val = exec(t, ex);
   switch (t->type) {
   case _if:
     // dead code elimination
-    opt_ast(t->c[0]), opt_ast(t->c[1]);
-    if (t->c[2])
-      opt_ast(t->c[2]);
-
     if (t->c[0]->type == val && !val2bool(t->c[0]->val)) {
       ast_free(t->c[1]);
       ast_free_outer(t);
@@ -1056,7 +1054,6 @@ void opt_ast(ast_t *t) {
     // TODO global add/... functions for "all" datatypes?
     // unused functions, unread variables (even better: this value is never read)
   default:
-    test_val = exec(t, (void *)exec);
     break;
   }
 
@@ -1069,8 +1066,11 @@ void opt_ast(ast_t *t) {
     if (t->c[1])
         ast_free(t->c[1]);
     */
+
     t->c[0] = t->c[1] = NULL;
     }
+
+  return test_val;
 }
 
 void optimize(ast_t *t) {
@@ -1079,7 +1079,7 @@ void optimize(ast_t *t) {
     no_interaction = true;
     env_push();
 
-    opt_ast(t);
+    opt_ast(t, (void *)opt_ast);
 
     env_pop();
     no_interaction = false;
