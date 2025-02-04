@@ -2,6 +2,7 @@
 #include "string.h"
 #include "utils.h"
 #include "value.h"
+#include "value_calc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -213,9 +214,15 @@ void *queue_dequeue_at(queue *q, long n) {
 }
 
 int queue_cmp(queue *q1, queue *q2) {
-  // TODO implement
-  print_error("List comparison is not implemented yet");
-  return 0;
+  if (queue_len(q1) != queue_len(q2))
+    return 0;
+
+  for (size_t i = 0; i < queue_len(q1); i++) {
+    int res = value_cmp(queue_at(q1, i), queue_at(q2, i));
+    if (res == 0)
+      return 0;
+  }
+  return 1;
 }
 
 void **queue_ptr_at(queue *q, long n) {

@@ -23,6 +23,8 @@ val_t *OR(val_t *a, val_t *b);
 
 val_t *NOT(val_t *a);
 
+int value_cmp(val_t *a, val_t *b);
+
 val_t *less_than(val_t *a, val_t *b);
 
 val_t *greater_than(val_t *a, val_t *b);
