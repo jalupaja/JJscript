@@ -230,6 +230,9 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
 %%
 
 val_t *eval(string *str, bool suppress_errors) {
+    if (string_get_char_at(str, -1) != ';')
+        string_append_char(str, ';');
+
     parsing_finished = false;
     if (suppress_errors)
         if(freopen("/dev/null", "w", stderr) == NULL); // remove stderr
