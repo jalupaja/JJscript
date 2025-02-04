@@ -50,6 +50,7 @@ void optimize(ast_t *t);
 FILE *open_file(char *file_name);
 const char *type2str(int type);
 bool no_interaction = false;
+bool run_optimization = false;
 
 ast_t *root;
 
@@ -233,6 +234,8 @@ val_t *eval(string *str, bool suppress_errors) {
     if (string_get_char_at(str, -1) != ';')
         string_append_char(str, ';');
 
+    bool cur_opt = run_optimization;
+    run_optimization = false;
     parsing_finished = false;
     if (suppress_errors)
         if(freopen("/dev/null", "w", stderr) == NULL); // remove stderr
@@ -249,6 +252,7 @@ val_t *eval(string *str, bool suppress_errors) {
 
     if (suppress_errors)
         if(freopen("/dev/tty", "w", stderr) == NULL); // restore stderr
+    run_optimization = cur_opt;
     parsing_finished = true;
     return res;
 }
@@ -478,7 +482,8 @@ val_t *exec(ast_t *t, ex_func ex) {
             if (DEBUG)
                 printf("assign_id: %s = %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
-            return res;
+            // return res;
+            return value_create(NULL, NULL_TYPE);
         }
         case assign_add: {
             val_t *id = ex(t->c[0], ex);
@@ -626,7 +631,8 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *id = ex(t->c[0], ex);
 
             env_save(id, t->val);
-            return t->val;
+            return value_create(NULL, NULL_TYPE);
+            // return t->val;
         }
         case _str: {
             queue *segments = t->val->val.qval;
@@ -805,10 +811,14 @@ val_t *exec(ast_t *t, ex_func ex) {
             return NULL;
         }
         case _input: {
-            if (!no_interaction) {
-                if (t->c[0]) {
-                    value_print(ex(t->c[0], ex));
+            if (t->c[0]) {
+                val_t *val = ex(t->c[0], ex);
+                if (!no_interaction) {
+                    value_print(val);
                 }
+            }
+
+            if (!no_interaction) {
                 string *str = string_read();
                 return value_create(str, STRING_TYPE);
             } else {
@@ -816,23 +826,28 @@ val_t *exec(ast_t *t, ex_func ex) {
             }
         }
         case _print: {
-            if (!no_interaction) {
-                val_t *val = ex(t->c[0], ex);
+            val_t *val = ex(t->c[0], ex);
+            if (!no_interaction)
                 value_print(val);
+
+            if (!no_interaction)
                 return value_create(NULL, NULL_TYPE);
-            } else {
+            else
                 return value_create(NULL, FUTURE_TYPE);
-            }
         }
         case _printl: {
-            if (!no_interaction) {
-                if (t->c[0]) {
-                    val_t *val = ex(t->c[0], ex);
+            if (t->c[0]) {
+                val_t *val = ex(t->c[0], ex);
+                if (!no_interaction)
                     value_print(val);
-                }
-                printf("\n");
+                if (!no_interaction)
+                    printf("\n");
             }
-            return value_create(NULL, NULL_TYPE);
+
+            if (!no_interaction)
+                return value_create(NULL, NULL_TYPE);
+            else
+                return value_create(NULL, FUTURE_TYPE);
         }
         case _import: {
             val_t *val = ex(t->c[0], ex);
@@ -1023,12 +1038,25 @@ val_t *fun_call(val_t *id, queue *args) {
 }
 
 val_t *opt_ast(ast_t *t, ex_func ex) {
-  // TODO functions that are never called, ...
   if (!t)
-    return;
+    return NULL;
 
-  for (int i = 0; i < MC; i++)
-    opt_ast(t->c[i]);
+  if (DEBUG) {
+    printf("->: %s: ", type2str(t->type));
+    if (t->val) {
+      value_print(t->val);
+    }
+    printf(": ");
+    for (int i = 0; i < MC; i++) {
+      if (t->c[i]) {
+        value_print(t->c[i]->val);
+        printf(", ");
+      } else {
+        break;
+      }
+    }
+    printf("\n");
+  }
 
   // if test_val is changed, update t
   val_t *test_val = NULL;
@@ -1059,24 +1087,35 @@ val_t *opt_ast(ast_t *t, ex_func ex) {
   default:
     break;
   }
+  if (DEBUG)
+      printf("<-: %s: \n", type2str(t->type));
 
-  if (test_val && test_val->val_type != FUTURE_TYPE && test_val->val_type != NULL_TYPE) {
+// TODO remove?
+  if (false && t->type == STMT) {
+    // set inner equal to current in order to keep assignments
+    printf("STMT -> %s\n", type2str(t->c[0]->type));
+    t->type = t->c[0]->type;
+    t->id = t->c[0]->id;
+    t->val = t->c[0]->val;
+
+    for (int i = MC - 1; i >= 0; i--) {
+      t->c[i] = t->c[0]->c[i];
+    }
+  }
+
+  if (test_val && test_val->val_type != FUTURE_TYPE && test_val->val_type != NULL_TYPE &&
+      t->type != assign_id && t->type != assign_fun) {
     t->type = val;
     t->val = test_val;
-
-    /* TODO currently crashes because val = test_val = result from one of those...
-    ast_free(t->c[0]);
-    if (t->c[1])
-        ast_free(t->c[1]);
-    */
-
     t->c[0] = t->c[1] = NULL;
-    }
+  }
 
   return test_val;
 }
 
 void optimize(ast_t *t) {
+    if (!run_optimization)
+        return;
     if (DEBUG)
         printf("OPTIMIZE:\n");
     no_interaction = true;
@@ -1186,7 +1225,7 @@ const char *type2str(int type) {
   case '!':
     return "'!'";
   case assign_id:
-    return "assign";
+    return "assign id";
   case assign_add:
     return "+=";
   case _aa:
@@ -1224,7 +1263,7 @@ const char *type2str(int type) {
   case _id_eval:
     return "id_eval";
   case lcurly:
-    return "{";
+    return "'{'";
   case _input:
     return "input";
   case _print:
