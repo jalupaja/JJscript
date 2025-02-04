@@ -943,6 +943,9 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *ret = NULL;
             while (val2bool(ex(t->c[0], ex))) {
                 ret = ex(t->c[1], ex);
+                if (ret && ret->return_val) {
+                    return ret;
+                }
             }
             // elif/else
             if (!ret) {
@@ -962,6 +965,9 @@ val_t *exec(ast_t *t, ex_func ex) {
                 cur = value_at(expr, i);
                 env_save(id, value_copy(cur));
                 ret = ex(t->c[2], ex);
+                if (ret && ret->return_val) {
+                    return ret;
+                }
             }
             // elif/else
             if (!ret) {
