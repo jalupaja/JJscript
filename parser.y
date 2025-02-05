@@ -177,7 +177,7 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | FUN_CALL
     | ID_EVAL
     | STRING
-    | _input lbrak STRING rbrak { $$ = node1(_input, $3); }
+    | _input lbrak EXPR rbrak { $$ = node1(_input, $3); }
     | _input lbrak rbrak { $$ = node1(_input, NULL); }
     | _eval lbrak EXPR rbrak { $$ = node1(_eval, $3); }
     | _len lbrak EXPR rbrak { $$ = node1(_len, $3); }
