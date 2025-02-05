@@ -219,7 +219,7 @@ int queue_cmp(queue *q1, queue *q2) {
 
   for (size_t i = 0; i < queue_len(q1); i++) {
     int res = value_cmp(queue_at(q1, i), queue_at(q2, i));
-    if (res == 1)
+    if (res != 0)
       return 1;
   }
   return 0;
