@@ -76,8 +76,16 @@ queue *string_split(string *str, string *delim) {
   string *token;
   size_t pos = 0;
 
-  while ((token = string_tokenize_string(str, delim, &pos)) != NULL) {
-    queue_enqueue(ret, value_create(token, STRING_TYPE));
+  if (string_get_char_at(delim, 0) == '\0') {
+    for (pos = 0; pos < string_len(str); pos++) {
+      string *chr = string_create(NULL);
+      string_append_char(chr, string_get_char_at(str, pos));
+      queue_enqueue(ret, value_create(chr, STRING_TYPE));
+    }
+  } else {
+    while ((token = string_tokenize_string(str, delim, &pos)) != NULL) {
+      queue_enqueue(ret, value_create(token, STRING_TYPE));
+    }
   }
 
   return ret;
