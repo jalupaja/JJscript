@@ -223,8 +223,16 @@ bool val2bool(val_t *val) {
   case STRING_TYPE: {
     string *str = val->val.strval;
     return str->length != 0;
-  } break;
+    break;
+  }
+  case QUEUE_TYPE:
+    print_error("Unsupported boolean conversion from list");
+    break;
+  case FUNCTION_TYPE:
+    print_error("Unsupported boolean conversion from function");
+    break;
   default:
+    printf("type: %d\n", val->val_type);
     print_error("Unsupported boolean conversion");
     break;
   }
@@ -232,30 +240,56 @@ bool val2bool(val_t *val) {
 }
 
 long val2int(val_t *val) {
-  if (val->val_type == INT_TYPE)
+  switch (val->val_type) {
+  case INT_TYPE:
     return val->val.intval;
-  else if (val->val_type == FLOAT_TYPE)
+    break;
+  case FLOAT_TYPE:
     return (long)val->val.floatval;
-  else if (val->val_type == BOOL_TYPE)
+    break;
+  case BOOL_TYPE:
     return (long)val->val.boolval;
-  else if (val->val_type == STRING_TYPE)
+    break;
+  case STRING_TYPE:
     return (long)string_get_char_at(val->val.strval, 0);
-  else
+    break;
+  case QUEUE_TYPE:
+    print_error("Unsupported integer conversion from list");
+    break;
+  case FUNCTION_TYPE:
+    print_error("Unsupported integer conversion from function");
+    break;
+  default:
     print_error("Unsupported integer conversion");
+    break;
+  }
   return 0;
 }
 
 double val2float(val_t *val) {
-  if (val->val_type == INT_TYPE)
+  switch (val->val_type) {
+  case INT_TYPE:
     return (double)val->val.intval;
-  else if (val->val_type == FLOAT_TYPE)
+    break;
+  case FLOAT_TYPE:
     return val->val.floatval;
-  else if (val->val_type == BOOL_TYPE)
+    break;
+  case BOOL_TYPE:
     return (double)val->val.boolval;
-  else if (val->val_type == STRING_TYPE)
+    break;
+  case STRING_TYPE:
     return (double)string_get_char_at(val->val.strval, 0);
-  else
+    break;
+  case QUEUE_TYPE:
+    print_error("Unsupported floating point conversion from list");
+    break;
+  case FUNCTION_TYPE:
+    print_error("Unsupported floating point conversion from function");
+    break;
+  default:
     print_error("Unsupported floating point conversion");
+    break;
+  }
   return 0;
 }
 
@@ -263,20 +297,27 @@ size_t value_len(val_t *val) {
   if (!val)
     return 0;
 
-  if (val->val_type == INT_TYPE) {
+  switch (val->val_type) {
+  case INT_TYPE:
+  case FLOAT_TYPE:
+  case BOOL_TYPE:
     return 1;
-  } else if (val->val_type == FLOAT_TYPE) {
-    return 1;
-  } else if (val->val_type == BOOL_TYPE) {
-    return 1;
-  } else if (val->val_type == NULL_TYPE) {
+    break;
+  case NULL_TYPE:
     return 0;
-  } else if (val->val_type == STRING_TYPE) {
+    break;
+  case STRING_TYPE:
     return string_len(val->val.strval);
-  } else if (val->val_type == QUEUE_TYPE) {
+    break;
+  case QUEUE_TYPE:
     return queue_len(val->val.qval);
-  } else {
+    break;
+  case FUNCTION_TYPE:
+    print_error("Unsupported length operation for function");
+    break;
+  default:
     print_error("Unsupported length operation");
+    break;
   }
   return 0;
 }
@@ -286,16 +327,24 @@ val_t **value_ptr_at(val_t *val, long n) {
   // interpreted to return the value itself
   val_t **ret = NULL;
   if (!val) {
-  } else if (val->val_type == INT_TYPE) {
-  } else if (val->val_type == FLOAT_TYPE) {
-  } else if (val->val_type == BOOL_TYPE) {
-  } else if (val->val_type == NULL_TYPE) {
-  } else if (val->val_type == FUTURE_TYPE) {
-  } else if (val->val_type == STRING_TYPE) {
-  } else if (val->val_type == QUEUE_TYPE) {
-    ret = (val_t **)queue_ptr_at(val->val.qval, n);
-  } else {
-    print_error("Fetched unsupported value");
+    switch (val->val_type) {
+    case INT_TYPE:
+    case FLOAT_TYPE:
+    case BOOL_TYPE:
+    case NULL_TYPE:
+    case FUTURE_TYPE:
+    case STRING_TYPE:
+      break;
+    case QUEUE_TYPE:
+      ret = (val_t **)queue_ptr_at(val->val.qval, n);
+      break;
+    case FUNCTION_TYPE:
+      print_error("Fetched unsupported value (function)");
+      break;
+    default:
+      print_error("Fetched unsupported value");
+      break;
+    }
   }
   return ret;
 }
