@@ -414,7 +414,7 @@ val_t *OR(val_t *a, val_t *b) {
 val_t *NOT(val_t *a) {
   if (a && a->val_type == FUTURE_TYPE)
     return value_create(NULL, FUTURE_TYPE);
-  if (!a || a->val_type == NULL_TYPE)
+  if (!a)
     return value_create(NULL, NULL_TYPE);
 
   bool res = !val2bool(a);
