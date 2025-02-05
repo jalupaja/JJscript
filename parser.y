@@ -47,6 +47,7 @@ typedef struct ast_t ast_t;
 val_t *exec (ast_t *t, ex_func ex);
 val_t *fun_call(val_t *id, queue *args);
 void optimize(ast_t *t);
+FILE *open_source_file(char *file_name);
 FILE *open_file(char *file_name);
 const char *type2str(int type);
 bool no_interaction = false;
@@ -69,7 +70,7 @@ enum {
 }
 
 %token _if _elif _else _while _for
-%token _return _import
+%token _return _import _read
 %token _str str_start <val> str_end
 %token _id id_start <val> id_end <id> _id_eval
 %token _arr_create <val> _range _arr_call _arr
@@ -179,6 +180,7 @@ EXPR: EXPR _eq EXPR { $$ = node2(_eq, $1, $3); }
     | STRING
     | _input lbrak EXPR rbrak { $$ = node1(_input, $3); }
     | _input lbrak rbrak { $$ = node1(_input, NULL); }
+    | _read lbrak EXPR rbrak { $$ = node1(_read, $3); }
     | _eval lbrak EXPR rbrak { $$ = node1(_eval, $3); }
     | _len lbrak EXPR rbrak { $$ = node1(_len, $3); }
     | _split lbrak EXPR delim EXPR delim rbrak { $$ = node2(_split, $3, $5); /* range with trailing comma */ }
@@ -342,7 +344,7 @@ string *parse_path(string *cur_path, string *next_path) {
 val_t *eval_file(string *file_name) {
     string *prev_file_name = cur_file_name;
     string *parsed_path = parse_path(cur_file_name, file_name);
-    FILE *file = open_file(string_get_chars(parsed_path));
+    FILE *file = open_source_file(string_get_chars(parsed_path));
     if (!file)
         return NULL;
 
@@ -856,6 +858,23 @@ val_t *exec(ast_t *t, ex_func ex) {
             string_free(str);
             return res;
         }
+        case _read: {
+            val_t *val = ex(t->c[0], ex);
+            string *file_name = val2string(val);
+            FILE *file = open_file(string_get_chars(file_name));
+            string_free(file_name);
+            if (file) {
+                char buf[512];
+                string *res = string_create(NULL);
+                while (fgets(buf, sizeof(buf), file)) {
+                    string_append_chars(res, buf);
+                }
+                fclose(file);
+                return value_create(res, STRING_TYPE);
+            } else {
+                return value_create(NULL, NULL_TYPE);
+            }
+        }
         case _eval: {
             val_t *val = ex(t->c[0], ex);
             string *str = val2string(val);
@@ -1136,30 +1155,34 @@ void optimize(ast_t *t) {
 }
 
 FILE *open_file(char *file_name) {
+    FILE *file = fopen(file_name, "r");
+
+    if (file) {
+        return file;
+    } else {
+        string *err_str = string_create("File '");
+        string_append_chars(err_str, file_name);
+        string_append_chars(err_str, "' not found");
+        print_error(string_get_chars(err_str));
+        string_free(err_str);
+        return NULL;
+    }
+}
+
+FILE *open_source_file(char *file_name) {
     // check if file ends with .jj
     size_t str_len = strlen(file_name);
     if (str_len < 4 || strncmp(file_name + str_len - 3, ".jj", 3) != 0) {
         print_error("Invalid filetype. Does it end with .jj?");
         return NULL;
     } else {
-        FILE *file = fopen(file_name, "r");
-
-        if (file) {
-            return file;
-        } else {
-            string *err_str = string_create("File '");
-            string_append_chars(err_str, file_name);
-            string_append_chars(err_str, "' not found");
-            print_error(string_get_chars(err_str));
-            string_free(err_str);
-            return NULL;
-        }
+        return open_file(file_name);
     }
 }
 
 void parse_file(string *file_name) {
     cur_file_name = file_name;
-    FILE *new_yyin = open_file(string_get_chars(file_name));
+    FILE *new_yyin = open_source_file(string_get_chars(file_name));
 
     if (new_yyin) {
         FILE *prev_yyin = yyin;
