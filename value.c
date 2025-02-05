@@ -225,7 +225,7 @@ bool val2bool(val_t *val) {
     break;
   }
   case QUEUE_TYPE:
-    print_error("Unsupported boolean conversion from list");
+    return queue_len(val->val.qval) > 0;
     break;
   case FUNCTION_TYPE:
     print_error("Unsupported boolean conversion from function");
