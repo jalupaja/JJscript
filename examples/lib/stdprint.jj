@@ -1,0 +1,16 @@
+printl_bold = {(msg)
+    printl("\CF${msg}\CD");
+}
+
+printl_red = {(msg)
+    printl("\CR${msg}\CD");
+}
+
+printl_green = {(msg)
+    printl("\CG${msg}\CD");
+}
+
+printl_blue = {(msg)
+    printl("\CB${msg}\CD");
+}
+

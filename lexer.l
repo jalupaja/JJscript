@@ -221,7 +221,13 @@ EOL ";"
 <STRING_DOUBLE>"\\\\" { string_append_char(cur_str, '\\'); /* append \ on \\ */ }
 <STRING_DOUBLE>"\\n" { string_append_char(cur_str, '\n'); /* append new line */ }
 <STRING_DOUBLE>"\\t" { string_append_char(cur_str, '\t'); /* append tab */ }
+<STRING_DOUBLE>"\\CF" { string_append_chars(cur_str, "\033[1m"); /* Fat(=Bold) text */ }
+<STRING_DOUBLE>"\\CR" { string_append_chars(cur_str, "\033[31m"); /* Red text */ }
+<STRING_DOUBLE>"\\CG" { string_append_chars(cur_str, "\033[32m"); /* Green text */ }
+<STRING_DOUBLE>"\\CB" { string_append_chars(cur_str, "\033[34m"); /* Blue text */ }
+<STRING_DOUBLE>"\\CD" { string_append_chars(cur_str, "\033[0m"); /* Default text coloring */ }
 <STRING_DOUBLE>"\\x"{HEX_NUM} { string_append_char(cur_str, strtol(&yytext[2], NULL, 16)); /* append hex value */ }
+<STRING_DOUBLE>"\\" { print_error("Invalid character \\. Did you mean \\\\"); }
 
 <STRING_DOUBLE,STRING_SINGLE>. { string_append_chars(cur_str, yytext); }
 
