@@ -49,11 +49,12 @@ val_t *fun_call(val_t *id, queue *args);
 void optimize(ast_t *t);
 FILE *open_source_file(char *file_name);
 FILE *open_file(char *file_name);
+ast_t *parse_file(string *file_name);
 const char *type2str(int type);
 bool no_interaction = false;
-bool run_optimization = false;
+bool run_optimization = true;
 
-ast_t *root;
+ast_t *root = NULL;
 
 enum {
     STMTS = 10000,
@@ -101,10 +102,6 @@ enum {
 %%
 
 S: STMTS {
-     if (PRINT_AST) printf("\n");
-     if (PRINT_AST) ast_print($1);
-     if (PRINT_AST) printf("\n");
-     optimize($1);
      if (PRINT_AST) printf("\n");
      if (PRINT_AST) ast_print($1);
      if (PRINT_AST) printf("\n");
@@ -341,8 +338,9 @@ string *parse_path(string *cur_path, string *next_path) {
     return result;
 }
 
-val_t *eval_file(string *file_name) {
+ast_t *parse_file(string *file_name) {
     string *prev_file_name = cur_file_name;
+    ast_t *prev_root = root;
     string *parsed_path = parse_path(cur_file_name, file_name);
     FILE *file = open_source_file(string_get_chars(parsed_path));
     if (!file)
@@ -355,21 +353,28 @@ val_t *eval_file(string *file_name) {
     YY_BUFFER_STATE buffer = yy_create_buffer(file, YY_BUF_SIZE);
     yy_switch_to_buffer(buffer);
 
-    val_t *res = NULL;
+    ast_t *res = NULL;
 
     // Parse the file.
     if (yyparse() == 0) {
-        res = exec(root, (void *)exec);
-        // TODO ast_free(root);
-    } else {
-        res = NULL;
+        res = root;
+        root = prev_root;
     }
     yy_delete_buffer(buffer);
-
     parsing_finished = true;
     fclose(file);
-    cur_file_name = prev_file_name;
     string_free(parsed_path);
+    cur_file_name = prev_file_name;
+    return res;
+}
+
+val_t *eval_file(string *file_name) {
+    val_t *res = NULL;
+    ast_t *code = parse_file(file_name);
+    if (code) {
+        res = exec(code, (void *)exec);
+        // TODO ast_free(root);
+    }
     return res;
 }
 
@@ -877,8 +882,10 @@ val_t *exec(ast_t *t, ex_func ex) {
         }
         case _eval: {
             val_t *val = ex(t->c[0], ex);
+
             string *str = val2string(val);
             val_t *res = eval(str, false);
+            string_free(str);
             if (res) {
                 return res;
             } else {
@@ -1063,7 +1070,7 @@ val_t *fun_call(val_t *id, queue *args) {
 }
 
 val_t *opt_ast(ast_t *t, ex_func ex) {
-  if (!t)
+  if (!t || !run_optimization)
     return NULL;
 
   if (DEBUG) {
@@ -1083,9 +1090,36 @@ val_t *opt_ast(ast_t *t, ex_func ex) {
     printf("\n");
   }
 
+  switch (t->type) {
+    // if (t->type == _eval || t->type == _import) { // TODO
+    case _import:
+      // if _import, actually import the code
+      val_t *val = ex(t->c[0], ex);
+      if (val->val_type == FUTURE_TYPE) {
+        run_optimization = false;
+        return NULL;
+      } else {
+        string *str = val2string(val);
+        ast_t *code = parse_file(str);
+        string_free(str);
+
+        t->type = code->type;
+        t->id = code->id;
+        t->val = code->val;
+
+        for (int i = MC - 1; i >= 0; i--) {
+          t->c[i] = code->c[i];
+        }
+      }
+      break;
+    case _eval: // TODO test
+      break;
+  }
+
   // if test_val is changed, update t
   val_t *test_val = NULL;
   test_val = exec(t, ex);
+
   switch (t->type) {
   case _if:
     // dead code elimination
@@ -1180,23 +1214,6 @@ FILE *open_source_file(char *file_name) {
     }
 }
 
-void parse_file(string *file_name) {
-    cur_file_name = file_name;
-    FILE *new_yyin = open_source_file(string_get_chars(file_name));
-
-    if (new_yyin) {
-        FILE *prev_yyin = yyin;
-
-        yyin = new_yyin;
-        cur_line_num = 0;
-
-        yyparse();
-
-        yyin = prev_yyin;
-        fclose(new_yyin);
-    }
-}
-
 int main (int argc, char **argv) {
     srand(time(NULL));
     error_count = 0;
@@ -1206,7 +1223,20 @@ int main (int argc, char **argv) {
         cur_file_name = string_create(NULL);
         print_error("No input file provided!");
     } else {
-        parse_file(string_create(argv[1]));
+        cur_file_name = string_create(argv[1]);
+        FILE *new_yyin = open_source_file(string_get_chars(cur_file_name));
+
+        if (new_yyin) {
+            FILE *prev_yyin = yyin;
+
+            yyin = new_yyin;
+            cur_line_num = 0;
+
+            yyparse();
+
+            yyin = prev_yyin;
+            fclose(new_yyin);
+        }
     }
     parsing_finished = true;
 
@@ -1214,6 +1244,12 @@ int main (int argc, char **argv) {
         fprintf(stderr, BOLD RED_COLOR "Execution Halted!" RESET_COLOR "\n");
         fprintf(stderr, RED_COLOR "Too many errors (%d) detected. Please fix them and try again." RESET_COLOR "\n", error_count);
     } else {
+        if (run_optimization) {
+            optimize(root);
+            if (PRINT_AST) printf("\n");
+            if (PRINT_AST) ast_print(root);
+            if (PRINT_AST) printf("\n");
+        }
         env_push(); // create main environment
         exec(root, (void *)exec);
         env_pop(); // create main environment
