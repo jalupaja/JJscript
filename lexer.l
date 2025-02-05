@@ -27,7 +27,12 @@ void _unput();
 
 void print_error(const char *msg) {
     error_count++;
-    char *c_line = string_get_chars(cur_line);
+    char *c_line;
+    if (cur_line) {
+        c_line = string_get_chars(cur_line);
+    } else {
+        c_line = "";
+    }
     int _cur_chr_num = cur_chr - yyleng;
     int _cur_line_num = cur_line_num;
     bool eol_error = false;
@@ -90,7 +95,7 @@ void print_error(const char *msg) {
         }
         fprintf(stderr, RESET_COLOR "\n");
         if (eol_error)
-            fprintf(stderr, "%s\n", string_get_chars(cur_line));
+            fprintf(stderr, "%s\n", c_line);
 
         fprintf(stderr, RED_COLOR "%s" RESET_COLOR "\n\n", msg);
     }

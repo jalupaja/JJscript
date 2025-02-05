@@ -1158,13 +1158,14 @@ FILE *open_file(char *file_name) {
 }
 
 void parse_file(string *file_name) {
+    cur_file_name = file_name;
     FILE *new_yyin = open_file(string_get_chars(file_name));
+
     if (new_yyin) {
         FILE *prev_yyin = yyin;
 
         yyin = new_yyin;
         cur_line_num = 0;
-        cur_file_name = file_name;
 
         yyparse();
 
