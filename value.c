@@ -70,6 +70,8 @@ val_t *value_copy(val_t *val) {
     return value_create(string_copy(val->val.strval), STRING_TYPE);
   case QUEUE_TYPE:
     return value_create(queue_copy(val->val.qval), QUEUE_TYPE);
+  case FUTURE_TYPE:
+    return value_create(NULL, FUTURE_TYPE);
   default:
     return value_create(NULL, NULL_TYPE);
   }
@@ -196,7 +198,7 @@ void value_print(val_t *val) {
   if (!val)
     return;
   if (val->val_type == FUNCTION_TYPE) {
-    // ast_print(val->val.funval->body);
+    ast_print(val->val.funval->body);
   } else {
     string *str = val2string(val);
     printf("%s", string_get_chars(str));

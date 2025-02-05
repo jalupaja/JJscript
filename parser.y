@@ -49,10 +49,11 @@ val_t *fun_call(val_t *id, queue *args);
 void optimize(ast_t *t);
 FILE *open_source_file(char *file_name);
 FILE *open_file(char *file_name);
+ast_t *parse_string(string *str);
 ast_t *parse_file(string *file_name);
 const char *type2str(int type);
 bool no_interaction = false;
-bool run_optimization = true;
+bool run_optimization = false;
 
 ast_t *root = NULL;
 
@@ -229,30 +230,24 @@ EMBED_ID: embed_lcurly EXPR rcurly id_end {
 
 %%
 
-val_t *eval(string *str, bool suppress_errors) {
-    if (string_get_char_at(str, -1) != ';')
-        string_append_char(str, ';');
 
-    bool cur_opt = run_optimization;
-    run_optimization = false;
-    parsing_finished = false;
+
+val_t *eval(string *str, bool suppress_errors) {
     if (suppress_errors)
         if(freopen("/dev/null", "w", stderr) == NULL); // remove stderr
-    YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
+
     val_t *res = NULL;
 
-    // Parse the input
     res = NULL;
-    if (yyparse() == 0) {
-        res = exec(root, (void *)exec);
+
+    ast_t *code = parse_string(str);
+    if (code) {
+        res = exec(code, (void *)exec);
         // ast_free(root); // TODO
     }
-    yy_delete_buffer(buffer);
 
     if (suppress_errors)
         if(freopen("/dev/tty", "w", stderr) == NULL); // restore stderr
-    run_optimization = cur_opt;
-    parsing_finished = true;
     return res;
 }
 
@@ -338,17 +333,41 @@ string *parse_path(string *cur_path, string *next_path) {
     return result;
 }
 
-ast_t *parse_file(string *file_name) {
-    string *prev_file_name = cur_file_name;
+ast_t *parse_string(string *str) {
+    if (string_get_char_at(str, -1) != ';')
+        string_append_char(str, ';');
+
     ast_t *prev_root = root;
-    string *parsed_path = parse_path(cur_file_name, file_name);
-    FILE *file = open_source_file(string_get_chars(parsed_path));
+
+    bool cur_opt = run_optimization;
+    parsing_finished = false;
+    run_optimization = false;
+
+    YY_BUFFER_STATE buffer = yy_scan_string(string_get_chars(str));
+    yy_switch_to_buffer(buffer);
+
+    ast_t *res = NULL;
+
+    // Parse the string.
+    if (yyparse() == 0) {
+        res = root;
+        root = prev_root;
+    }
+    yy_delete_buffer(buffer);
+    run_optimization = cur_opt;
+    parsing_finished = true;
+
+    return res;
+}
+
+ast_t *parse_file(string *file_name) {
+    ast_t *prev_root = root;
+    FILE *file = open_source_file(string_get_chars(file_name));
     if (!file)
         return NULL;
 
     parsing_finished = false;
     cur_line_num = 0;
-    cur_file_name = parsed_path;
 
     YY_BUFFER_STATE buffer = yy_create_buffer(file, YY_BUF_SIZE);
     yy_switch_to_buffer(buffer);
@@ -363,18 +382,22 @@ ast_t *parse_file(string *file_name) {
     yy_delete_buffer(buffer);
     parsing_finished = true;
     fclose(file);
-    string_free(parsed_path);
-    cur_file_name = prev_file_name;
     return res;
 }
 
 val_t *eval_file(string *file_name) {
+    string *prev_file_name = cur_file_name;
+    string *parsed_path = parse_path(cur_file_name, file_name);
+    cur_file_name = parsed_path;
+
     val_t *res = NULL;
-    ast_t *code = parse_file(file_name);
+    ast_t *code = parse_file(parsed_path);
     if (code) {
         res = exec(code, (void *)exec);
         // TODO ast_free(root);
     }
+    cur_file_name = prev_file_name;
+    string_free(parsed_path);
     return res;
 }
 
@@ -486,6 +509,7 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *id = ex(t->c[0], ex);
 
             val_t *res = ex(t->c[1], ex);
+
             if (DEBUG)
                 printf("assign_id: %s = %s\n", string_get_chars(id->val.strval), string_get_chars(val2string(res)));
             env_save(id, res);
@@ -639,7 +663,6 @@ val_t *exec(ast_t *t, ex_func ex) {
 
             env_save(id, t->val);
             return value_create(NULL, NULL_TYPE);
-            // return t->val;
         }
         case _str: {
             queue *segments = t->val->val.qval;
@@ -669,6 +692,10 @@ val_t *exec(ast_t *t, ex_func ex) {
             // TODO env_save_at
             val_t *cur = env_search(id);
             val_t *at = ex(t->c[1], ex);
+
+            if (cur->val_type == FUTURE_TYPE || at->val_type == FUTURE_TYPE ) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
 
             return value_at(cur, val2int(at));
         }
@@ -705,15 +732,28 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *left = ex(t->c[0], ex);
             val_t *right = ex(t->c[1], ex);
 
+            if (left->val_type == FUTURE_TYPE || right->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
+
             bool res = value_in(left, right);
             return value_create(&res, BOOL_TYPE);
         }
         case _range: {
             val_t *left = ex(t->c[0], ex);
             val_t *right = ex(t->c[1], ex);
+            if (left->val_type == FUTURE_TYPE || right->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
+
             double step = 1;
             if (t->c[2]) {
-                step = val2float(ex(t->c[2], ex));
+                val_t *step_val = ex(t->c[2], ex);
+
+                if (step_val->val_type == FUTURE_TYPE) {
+                    return value_create(NULL, FUTURE_TYPE);
+                }
+                step = val2float(step_val );
             }
 
             if (step <= 0) {
@@ -801,7 +841,11 @@ val_t *exec(ast_t *t, ex_func ex) {
         }
         case _id_eval: {
             val_t *id = ex(t->c[0], ex);
+
             val_t *cur = env_search(id);
+            if (cur->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
 
             if (cur) {
                 return cur;
@@ -865,6 +909,7 @@ val_t *exec(ast_t *t, ex_func ex) {
         }
         case _read: {
             val_t *val = ex(t->c[0], ex);
+            // TODO check opt (val)
             string *file_name = val2string(val);
             FILE *file = open_file(string_get_chars(file_name));
             string_free(file_name);
@@ -897,18 +942,26 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *val = ex(t->c[0], ex);
             if (!val || val->val_type == NULL_TYPE) {
                 return value_create(NULL, NULL_TYPE);
+            } else if (val->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
             }
+
             size_t len = value_len(val);
             return value_create(&len, INT_TYPE);
         }
         case _split: {
             val_t *val = ex(t->c[0], ex);
             string *delim;
+            val_t *delim_val = NULL;
             if (t->c[1]) {
-                val_t *delim_val = ex(t->c[1], ex);
+                delim_val = ex(t->c[1], ex);
                 delim = val2string(delim_val);
             } else {
                 delim = string_create(" ");
+            }
+
+            if (val->val_type == FUTURE_TYPE || (delim_val && delim_val->val_type == FUTURE_TYPE)) {
+                return value_create(NULL, FUTURE_TYPE);
             }
 
             queue *res;
@@ -926,9 +979,14 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *val_1, *val_2;
             double start, end;
             bool ret_float = false;
+
             if (t->c[0] && t->c[1]) {
                 val_1 = ex(t->c[0], ex);
                 val_2 = ex(t->c[1], ex);
+
+                if (val_1->val_type == FUTURE_TYPE || val_2->val_type == FUTURE_TYPE) {
+                    return value_create(NULL, FUTURE_TYPE);
+                }
 
                 start = val2float(val_1);
                 end = val2float(val_2);
@@ -957,7 +1015,13 @@ val_t *exec(ast_t *t, ex_func ex) {
             }
         }
         case _if:
-            if (val2bool(ex(t->c[0], ex))) {
+            val_t *expr = ex(t->c[0], ex);
+
+            if (expr->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
+
+            if (val2bool(expr)) {
                 return ex(t->c[1], ex);
             } else if (t->c[2]) {
                 return ex(t->c[2], ex);
@@ -967,7 +1031,12 @@ val_t *exec(ast_t *t, ex_func ex) {
             return ex(t->c[0], ex);
         case _while: {
             val_t *ret = NULL;
-            while (val2bool(ex(t->c[0], ex))) {
+
+            val_t *expr = ex(t->c[0], ex);
+            if (expr->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
+            while (val2bool(expr)) {
                 ret = ex(t->c[1], ex);
                 if (ret && ret->return_val) {
                     return ret;
@@ -983,6 +1052,9 @@ val_t *exec(ast_t *t, ex_func ex) {
             val_t *id = ex(t->c[0], ex);
 
             val_t *expr = ex(t->c[1], ex);
+            if (expr->val_type == FUTURE_TYPE) {
+                return value_create(NULL, FUTURE_TYPE);
+            }
 
             size_t expr_len = value_len(expr);
             val_t *cur;
@@ -1031,8 +1103,7 @@ val_t *fun_call(val_t *id, queue *args) {
   if (queue_len(args) != p_len) {
     if (queue_len(args) == 1 && (((val_t *)queue_at(args, 0))->val_type == QUEUE_TYPE) &&
                                 queue_len(((val_t *)queue_at(args, 0))->val.qval) == p_len) {
-      // TODO if there is only one argument, it expects more but the first is a queue ->
-      // use first argument as args
+      // if there is only one argument, it expects more AND the first is a queue -> use first argument as args
       final_args = ((val_t *)queue_at(args, 0))->val.qval;
     } else {
       char buf[32];
@@ -1090,18 +1161,28 @@ val_t *opt_ast(ast_t *t, ex_func ex) {
     printf("\n");
   }
 
+  val_t *tmp_val;
   switch (t->type) {
-    // if (t->type == _eval || t->type == _import) { // TODO
-    case _import:
+    case _import: {
       // if _import, actually import the code
       val_t *val = ex(t->c[0], ex);
+
       if (val->val_type == FUTURE_TYPE) {
         run_optimization = false;
         return NULL;
       } else {
         string *str = val2string(val);
-        ast_t *code = parse_file(str);
+
+        string *prev_file_name = cur_file_name;
+        string *parsed_path = parse_path(cur_file_name, str);
+        cur_file_name = parsed_path;
+
+        ast_t *code = parse_file(parsed_path);
+        tmp_val = ex(code, ex);
+
+        cur_file_name = prev_file_name;
         string_free(str);
+        string_free(parsed_path);
 
         t->type = code->type;
         t->id = code->id;
@@ -1111,9 +1192,29 @@ val_t *opt_ast(ast_t *t, ex_func ex) {
           t->c[i] = code->c[i];
         }
       }
-      break;
-    case _eval: // TODO test
-      break;
+    }
+    case _eval: {
+      // stop optimization as all further code can be affected by this eval (if this eval is using a FUTURE_TYPE. newly created variables would still be unaffected)
+      val_t *val = ex(t->c[0], ex);
+      if (val->val_type == FUTURE_TYPE) {
+        run_optimization = false;
+        return NULL;
+      }
+     }
+  }
+
+  // everything with a FUTURE_TYPE as input will likely be a FUTURE_TYPE itself
+  for (int i = 0; i < MC; i++) {
+    if (t->c[i]) {
+      // TODO will inf loop? (on loops???)
+      tmp_val = ex(t->c[i], ex);
+      if (tmp_val->val_type == FUTURE_TYPE) {
+        return tmp_val;
+      } else if (tmp_val && tmp_val->val_type != NULL_TYPE) {
+        t->c[i]->type = val;
+        t->c[i]->val = tmp_val;
+      }
+    }
   }
 
   // if test_val is changed, update t
@@ -1143,6 +1244,22 @@ val_t *opt_ast(ast_t *t, ex_func ex) {
     // val_type...
     // TODO global add/... functions for "all" datatypes?
     // unused functions, unread variables (even better: this value is never read)
+  case assign_fun: {
+    /* TODO could be done but all global variables also have to be FUTURE_TYPE to work correctly
+    fun_t *fun = t->val->val.funval;
+    params = funval->params;
+    env_push();
+    // assign params as future
+    size_t p_len = queue_len(params);
+    for (size_t i = 0; i < p_len; i++) {
+      env_save_new(queue_at(params, i), value_create(NULL, FUTURE_TYPE));
+    }
+
+    ex(funval->body, ex);
+    env_pop();
+    */
+    break;
+  }
   default:
     break;
   }
