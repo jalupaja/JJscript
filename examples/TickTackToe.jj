@@ -25,6 +25,8 @@ count_winning_moves = {(board, player)
 calc_move = {(board, me, opp)
     board = copy(board);
 
+    // moves based on ''Newell and Simon's 1972 tic-tac-toe program''' as described on Wikipedia: https://en.wikipedia.org/wiki/Tic-tac-toe
+
     // 1. Win: take line
     for (w : winning_positions) {
         marker_count = 0;
