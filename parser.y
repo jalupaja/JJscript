@@ -1199,11 +1199,15 @@ void parse_file(string *file_name) {
 
 int main (int argc, char **argv) {
     srand(time(NULL));
-    parsing_finished = true;
     error_count = 0;
 
     parsing_finished = false;
-    parse_file(string_create(argv[1]));
+    if (argc <= 1) {
+        cur_file_name = string_create(NULL);
+        print_error("No input file provided!");
+    } else {
+        parse_file(string_create(argv[1]));
+    }
     parsing_finished = true;
 
     if (error_count > 0) {
