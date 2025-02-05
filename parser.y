@@ -1032,7 +1032,7 @@ val_t *fun_call(val_t *id, queue *args) {
     p_val = (val_t *)queue_at(final_args, i);
     if (DEBUG)
         printf("\t%s\n", string_get_chars(p_name->val.strval)); /* not actually a function pointer */
-    env_save(p_name, p_val);
+    env_save_new(p_name, p_val);
   }
 
   val_t *res = exec(fun->body, (void *)exec);

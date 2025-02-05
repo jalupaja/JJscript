@@ -201,6 +201,16 @@ val_t *env_search(val_t *id) {
   return NULL;
 }
 
+void env_save_new(val_t *id, val_t *val) {
+  if (DEBUG)
+    printf("assign_new(env: %p): %s = %s", cur_env,
+           string_get_chars(id->val.strval), string_get_chars(val2string(val)));
+  env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
+  new->id = id->val.strval;
+  new->val = val;
+  queue_enqueue(cur_env->vars, new);
+}
+
 void env_save(val_t *id, val_t *val) {
   // TODO could prob. free overwritten values...
   env_var_t *cur = _env_search(id->val.strval);
@@ -230,9 +240,6 @@ void env_save(val_t *id, val_t *val) {
     // enqueue new value
     if (DEBUG)
       printf("(new)\n");
-    env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
-    new->id = id->val.strval;
-    new->val = val;
-    queue_enqueue(cur_env->vars, new);
+    env_save_new(id, val);
   }
 }
