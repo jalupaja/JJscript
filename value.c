@@ -3,7 +3,6 @@
 #include "function.h"
 #include "string.h"
 
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -326,7 +325,7 @@ val_t **value_ptr_at(val_t *val, long n) {
   // a return value of NULL signals that there is no index. This should be
   // interpreted to return the value itself
   val_t **ret = NULL;
-  if (!val) {
+  if (val) {
     switch (val->val_type) {
     case INT_TYPE:
     case FLOAT_TYPE:
@@ -346,6 +345,7 @@ val_t **value_ptr_at(val_t *val, long n) {
       break;
     }
   }
+
   return ret;
 }
 

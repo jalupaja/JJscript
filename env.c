@@ -203,7 +203,7 @@ val_t *env_search(val_t *id) {
 
 void env_save_new(val_t *id, val_t *val) {
   if (DEBUG)
-    printf("assign_new(env: %p): %s = %s", cur_env,
+    printf("assign_new(env: %p): %s = %s\n", cur_env,
            string_get_chars(id->val.strval), string_get_chars(val2string(val)));
   env_var_t *new = (env_var_t *)malloc(sizeof(env_var_t));
   new->id = id->val.strval;
