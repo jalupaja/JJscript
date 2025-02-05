@@ -1036,7 +1036,7 @@ val_t *exec(ast_t *t, ex_func ex) {
             if (expr->val_type == FUTURE_TYPE) {
                 return value_create(NULL, FUTURE_TYPE);
             }
-            while (val2bool(expr)) {
+            while (val2bool(ex(t->c[0], ex))) {
                 ret = ex(t->c[1], ex);
                 if (ret && ret->return_val) {
                     return ret;
