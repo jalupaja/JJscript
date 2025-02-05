@@ -250,9 +250,11 @@ printl();
 
 // Useless showcase
 name = "Tac Toe Tic ";
-name = join(name[8::18::0.5], "");
+n${"am"}e = join(name[8::18::0.5], "");
 printl("=== Welcome to ${name} ===");
-name = join(name[0::len(name)::2], "");
+ran_string = "This is just a random string for fun and as a showcase" / " ";
+ran_list = ran_string[-2:-1, 4];
+n${join(ran_list[0, 2, 1][-1], "")} = join(name[0::len(name)::2], "");
 printl("${"~" * 40}");
 printl("=== Welcome to ${name} ===");
 
