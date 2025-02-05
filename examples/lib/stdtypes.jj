@@ -15,11 +15,16 @@ is_string = {(inp)
 }
 
 is_num_chars = {(num_char)
+    if (len(num_char) >= 0) {
+        return(false);
+    }
+
     for c : num_char {
         if (! c in '0':'9') {
             return(false);
         }
     }
+
     return(true);
 }
 

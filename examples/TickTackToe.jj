@@ -1,0 +1,259 @@
+import("lib/stdtypes.jj");
+import("lib/stdlib.jj");
+
+count_winning_moves = {(board, player)
+    count = 0;
+    for (w : winning_positions) {
+        marker_count = 0;
+        empty_count = 0;
+        empty_index = -1;
+        for (i : w) {
+            if (board[i] == player) {
+                marker_count += 1;
+            } elif (board[i] == " ") {
+                empty_count += 1;
+                empty_index = i;
+            }
+        }
+        if (marker_count == 2 & empty_count == 1) {
+            count += 1;
+        }
+    }
+    return(count);
+}
+
+calc_move = {(board, me, opp)
+    board = copy(board);
+
+    // 1. Win: take line
+    for (w : winning_positions) {
+        marker_count = 0;
+        empty_count = 0;
+        empty_index = -1;
+        for (i : w) {
+            if (board[i] == me) {
+                marker_count += 1;
+            } elif (board[i] == " ") {
+                empty_count += 1;
+                empty_index = i;
+            }
+        }
+        if (marker_count == 2 & empty_count == 1) {
+            return(empty_index);
+        }
+    }
+
+    // 2. Block
+    for (w : winning_positions) {
+        marker_count = 0;
+        empty_count = 0;
+        empty_index = -1;
+        for (i : w) {
+            if (board[i] == opp) {
+                marker_count += 1;
+            } elif (board[i] == " ") {
+                empty_count += 1;
+                empty_index = i;
+            }
+        }
+        if (marker_count == 2 & empty_count == 1) {
+            return(empty_index);
+        }
+    }
+
+    // 3. Fork
+    for (i : [0,1,2,3,4,5,6,7,8]) {
+        if (board[i] == " ") {
+            board_copy = copy(board);
+            board_copy[i] = me;
+            if (count_winning_moves(board_copy, me) >= 2) {
+                return(i);
+            }
+        }
+    }
+
+    // 4. Block fork.
+    candidate = -1;
+    for (i : [0,1,2,3,4,5,6,7,8]) {
+        if (board[i] == " ") {
+            board_copy = copy(board);
+            board_copy[i] = opp;
+            if (count_winning_moves(board_copy, opp) >= 2) {
+                return(i);
+            }
+        }
+    }
+
+    // 5. Take center
+    if (board[4] == " ") {
+        return(4);
+    }
+
+    // 6. Play opposite corner
+    corners = [[0,8], [2,6]];
+    for (pair : corners) {
+        if (board[pair[0]] == opp & board[pair[1]] == " ") {
+            return(pair[1]);
+        }
+        if (board[pair[1]] == opp & board[pair[0]] == " ") {
+            return(pair[0]);
+        }
+    }
+
+    // 7. Play empty corner
+    for (i : [0,2,6,8]) {
+        if (board[i] == " ") {
+            return(i);
+        }
+    }
+
+    // 8. Play empty side
+    for (i : [1,3,5,7]) {
+        if (board[i] == " ") {
+            return(i);
+        }
+    }
+
+    return(-1);
+}
+
+
+print_board = {(board)
+    print_separator = {()
+        printl("|" + join("-" * 11, "") + "|");
+    }
+
+    print_separator();
+    for (i : 0:2) {
+        row = board[i * 3 : ((i * 3 + 3) - 1)];
+
+        row_str = "| ${join(row, " | ")} |";
+
+        printl(row_str);
+        print_separator();
+    }
+}
+
+winning_positions = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+];
+
+get_winner = {(board)
+    for (w : winning_positions) {
+        if (board[w] == [p1] * 3) {
+            return(p1);
+        } elif (board[w] == [p2] * 3) {
+            return(p2);
+        }
+    }
+    return(NONE);
+}
+
+check_draw = {(board)
+    return(! " " in board);
+}
+
+human_move = {(board)
+    print_board(board);
+    moveInput = input("Player " + cur_player + ": ");
+
+    if (!is_num_chars(moveInput)) {
+        printl("Error: Input is not a number.");
+        return(true);
+    }
+
+    pos = eval(moveInput) - 1;
+    if (board[pos] != " ") {
+        printl("Error: Cell already taken!");
+        return(true);
+    }
+
+    board[pos] = cur_player;
+    return(false);
+}
+
+computer_move = {(board)
+    pos = calc_move(board, p1, p2);
+    if (pos == -1) {
+        return(true);
+    }
+    printl("Computer ${p1}: ${pos + 1}");
+    board[pos] = p1;
+    return(false);
+}
+
+switch_player = {()
+    if (cur_player == p1) {
+        cur_player = p2;
+    } else {
+        cur_player = p1;
+    }
+}
+
+round = {(mode)
+    board = [" "] * 9;
+
+    finished = false;
+    while (!finished) {
+        move_error = false;
+        if (cur_player == p2) {
+            move_error = human_move(board);
+        } elif (mode == "multi") {
+            move_error = human_move(board);
+        } else {
+            move_error = computer_move(board);
+            if (move_error) {
+                printl("Error: Computer failure.");
+                finished = true;
+            }
+        }
+
+        if (! move_error) {
+            winner = get_winner(board);
+            if (winner & mode == "single" & winner == p1) {
+                printl("\nComputer won!");
+                print_board(board);
+                finished = true;
+            } elif (winner) {
+                printl("\nPlayer " + winner + " won!");
+                print_board(board);
+                finished = true;
+            } elif (check_draw(board)) {
+                printl("\nIt's a draw!");
+                print_board(board);
+                finished = true;
+            }
+
+            switch_player();
+        }
+    }
+}
+
+p1 = "#"; // Computer
+p2 = "@";
+mode = "multi"; // single: singleplayer vs Computer; multi: 2 Players 1v1
+
+cur_player = p2;
+
+printl("Instructions:\nWrite the number you want to place your symbol.");
+print_board(split(join(1:9, ""), ""));
+printl();
+
+// Useless showcase
+name = "Tac Toe Tic ";
+name = join(name[8::18::0.5], "");
+printl("=== Welcome to ${name} ===");
+name = join(name[0::len(name)::2], "");
+printl("${"~" * 40}");
+printl("=== Welcome to ${name} ===");
+
+round(mode);
+
+printl("Thank you for playing!");
