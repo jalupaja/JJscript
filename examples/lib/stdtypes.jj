@@ -14,14 +14,6 @@ is_string = {(inp)
     return(!is_num(inp) & !is_list(inp));
 }
 
-to_string = {(inp)
-    if (is_list(inp)) {
-        return("[" + join(inp, ", ") + "]");
-    } else {
-        return("" + inp);
-    }
-}
-
 is_num_chars = {(num_char)
     for c : num_char {
         if (! c in '0':'9') {
@@ -30,3 +22,22 @@ is_num_chars = {(num_char)
     }
     return(true);
 }
+
+to_string = {(inp)
+    if (is_list(inp)) {
+        return("[" + join(inp, ", ") + "]");
+    } else {
+        return("" + inp);
+    }
+}
+
+copy = {(var)
+    if (is_string(var)) {
+        return(var + "");
+    } elif (is_list(var)) {
+        return(var + 1 - 1);
+    } else {
+        return(var); // not a reference
+    }
+}
+
