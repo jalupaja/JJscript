@@ -15,7 +15,7 @@ is_string = {(inp)
 }
 
 is_num_chars = {(num_char)
-    if (len(num_char) >= 0) {
+    if (len(num_char) <= 0) {
         return(false);
     }
 
